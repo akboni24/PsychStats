@@ -18,7 +18,7 @@ ui <- navbarPage(
   navbarMenu("Transform", "five"),
   navbarMenu("Analyze", 
              "Descriptive Stats", # section headers
-             tabPanel("Frequencies", fluidPage(freqUI("freq1"))),
+             # tabPanel("Frequencies", fluidPage(freqUI("freq1"))),
              tabPanel("Descriptives", "desc"),
              "Compare Means",
              tabPanel("Means", "m"),
@@ -33,9 +33,21 @@ ui <- navbarPage(
              tabPanel("Linear", "lm")),
   navbarMenu("Graphs", "seven"),
   
+  # sidebar panel for csv file upload
+  sidebarPanel(
+    # Input: Select a file ----
+    fileInput("file1", "Choose a CSV File",
+              multiple = FALSE,
+              # only accepts csv's
+              accept = c("text/csv",
+                         "text/comma-separated-values,text/plain",
+                         ".csv")),
+    # Input: Checkbox if file has header ----
+    checkboxInput("header", "Header Row", TRUE),
+    
+  ), 
   mainPanel(
-    # still need to add the csv upload
-    DT::dataTableOutput("dataView")
+    DT::dataTableOutput("table1")
   )
 )
 
@@ -43,20 +55,28 @@ ui <- navbarPage(
 server <- function(input, output, session) {
   
   # will need to include a call to all of the server functions of my seperate modules
-  freqServer("freq1")
+  # freqServer("freq1")
   univariateServer("uni1")
   
   # Data Table ----------------------------------------------------------------
-  # -1 means no pagination; the 2nd element contains menu labels
-  # has a default dataset in it right now
-  output$dataView <- DT::renderDataTable(
-    DT::datatable(
-      iris, options = list(
-        lengthMenu = list(c(5, 15, -1), c('5', '15', 'All')),
-        pageLength = 15
-      )
+  # Converts given csv to a data frame and turns it into a data table
+  df <- reactive({
+    req(input$file1)
+    ext <- tools::file_ext(input$file1$name)
+    switch(ext,
+           csv = vroom::vroom(input$file1$datapath, delim = ","),
+           validate("Invalid file; Please upload a .csv file")
     )
-  )
+  })
+
+  output$table1 <- DT::renderDataTable({
+    
+    DT::datatable(df(), options = list(
+      lengthMenu = list(c(5, 15, -1), c('5', '15', 'All')),
+      pageLength = 15)
+    )
+  })
+    
   
 }
 
