@@ -3,13 +3,13 @@ library(bslib)
 
 # here is where I am importing all of my other files - there's a better way to do
 # this, I just haven't gotten it to work yet
-source("~/ColbySPSS-app/Analyze/freq.R")
-source("~/ColbySPSS-app/Analyze/univariate.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/freq.R")
 
-# Main user interface - Navbar at the top, data table and usv import on the main page
+# Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
   theme = bs_theme(bootswatch = "yeti"),
   "SPSS-R",
+  selected = NULL,
   # in navBarMenu, will replace the name of the module as the second argument
   navbarMenu("File", "one"),
   navbarMenu("Edit", "two"),
@@ -18,7 +18,7 @@ ui <- navbarPage(
   navbarMenu("Transform", "five"),
   navbarMenu("Analyze", 
              "Descriptive Stats", # section headers
-             # tabPanel("Frequencies", fluidPage(freqUI("freq1"))),
+             tabPanel("Frequencies", fluidPage(freqUI("freq1"))),
              tabPanel("Descriptives", "desc"),
              "Compare Means",
              tabPanel("Means", "m"),
@@ -43,7 +43,7 @@ ui <- navbarPage(
                          "text/comma-separated-values,text/plain",
                          ".csv")),
     # Input: Checkbox if file has header ----
-    checkboxInput("header", "Header Row", TRUE),
+    checkboxInput("header", "Header Row", TRUE)
     
   ), 
   mainPanel(
@@ -51,12 +51,7 @@ ui <- navbarPage(
   )
 )
 
-
 server <- function(input, output, session) {
-  
-  # will need to include a call to all of the server functions of my seperate modules
-  # freqServer("freq1")
-  univariateServer("uni1")
   
   # Data Table ----------------------------------------------------------------
   # Converts given csv to a data frame and turns it into a data table
@@ -76,8 +71,11 @@ server <- function(input, output, session) {
       pageLength = 15)
     )
   })
-    
   
+  # will need to include a call to all of the server functions of my separate modules
+  req(input$file1)
+  freqServer("freq1", df())
+  univariateServer("uni1")
 }
 
 shinyApp(ui = ui, server = server)
