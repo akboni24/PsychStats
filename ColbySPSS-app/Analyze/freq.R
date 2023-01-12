@@ -73,29 +73,31 @@ freqServer <- function(id, data) {
     removeModal()
     
     # Central Tendency ---------------------------------------------------------
-    centenSelect <- mget(input$centen)
-    print("here")
+    if (!is.null(input$centen)) {
+      centenSelect <- unname(unlist(mget(input$centen, inherit = TRUE))) 
     
     results <- list()
     # use lapply to apply each function selected to each variable chosen
     if (c("Mean") %in% centenSelect) {
-      print("got here")
-      results.append(lapply(vars_selected, mean))
-    }
-    if ("Median" %in% centenSelect) {
-      results.append(lapply(vars_selected, median))
-    }
-    if ("Mode" %in% centenSelect) {
-    # Have to create own mode function
-      results.append(lapply(vars_selected, function(x) {
-      uniqx <- unique(x)
-      uniqx[which.max(tabulate(match(x, uniqx)))]
-    }))
-    }
-    if ("Sum" %in% centenSelect) {
-     results.append(lapply(vars_selected, sum))
+      # need to fix this for multiple inputs
+      results.append(lapply(data() %>% select(input$rank_list_2), mean))
     }
     
+    if (c("Median") %in% centenSelect) {
+      results.append(lapply(data() %>% select(input$rank_list_2), median))
+    }
+    #if ("Mode" %in% centenSelect) {
+    # Have to create own mode function
+      #results.append(lapply(data()[input$rank_list_2], function(x) {
+      #uniqx <- unique(x)
+      #uniqx[which.max(tabulate(match(x, uniqx)))]
+    #}))
+    #}
+    if ("Sum" %in% centenSelect) {
+     results.append(lapply(data() %>% select(input$rank_list_2), sum))
+    }
+    
+    }
     output$results <- renderPrint(results)
     
   })

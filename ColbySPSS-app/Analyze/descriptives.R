@@ -67,10 +67,6 @@ descriptivesServer <- function(id, data) {
         ))
       
     })
-    observeEvent(input$stat, {
-      results_stat <- statsModal(input, output, session, input$rank_list_2)
-      output$results <- renderPrint(results_stat)
-    })
   })
 }
 

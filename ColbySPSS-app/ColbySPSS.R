@@ -4,6 +4,7 @@ library(bslib)
 # here is where I am importing all of my other files - there's a better way to do
 # this, I just haven't gotten it to work yet
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/freq.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/descriptives.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
@@ -36,7 +37,7 @@ ui <- navbarPage(
   navbarMenu("Analyze", 
              "Descriptive Stats", # section headers
              tabPanel("Frequencies", fluidPage(freqUI("freq1"))),
-             tabPanel("Descriptives", "desc"),
+             tabPanel("Descriptives", fluidPage(descriptivesUI("desc1"))),
              "Compare Means",
              tabPanel("Means", "m"),
              tabPanel("One Sample T Test", "o"),
@@ -76,7 +77,7 @@ server <- function(input, output, session) {
   
   # will need to include a call to all of the server functions of my separate module
   freqServer("freq1", df)
-  #univariateServer("uni1")
+  descriptivesServer("desc1", df)
 }
 
 shinyApp(ui = ui, server = server)
