@@ -9,8 +9,25 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/freq.R")
 ui <- navbarPage(
   theme = bs_theme(bootswatch = "yeti"),
   "SPSS-R",
-  selected = NULL,
+  selected = "Home",
   # in navBarMenu, will replace the name of the module as the second argument
+  tabPanel("Home", 
+           sidebarLayout(
+             # sidebar panel for csv file upload
+             sidebarPanel(
+               # Input: Select a file ---------------
+               fileInput("file1", "Choose a CSV File",
+                         multiple = FALSE,
+                         # only accepts csv's
+                         accept = c("text/csv",
+                                    "text/comma-separated-values,text/plain",
+                                    ".csv")),
+               # Input: Checkbox if file has header ----
+               checkboxInput("header", "Header Row", TRUE)), 
+            # Main Panel for the data table ---------------
+            mainPanel(
+             DT::dataTableOutput("table1")
+           ))),
   navbarMenu("File", "one"),
   navbarMenu("Edit", "two"),
   navbarMenu("View", "three"),
@@ -27,28 +44,12 @@ ui <- navbarPage(
              tabPanel("Paired Samples T Test", "P"),
              tabPanel("One Way ANOVA", "anova"),
              "General Linear Model",
-             tabPanel("Univariate", fluidPage(univariateUI("uni1"))),
+             #tabPanel("Univariate", fluidPage(univariateUI("uni1"))),
              tabPanel("Multivariate", "m"),
              "Regression",
              tabPanel("Linear", "lm")),
   navbarMenu("Graphs", "seven"),
-  
-  # sidebar panel for csv file upload
-  sidebarPanel(
-    # Input: Select a file ----
-    fileInput("file1", "Choose a CSV File",
-              multiple = FALSE,
-              # only accepts csv's
-              accept = c("text/csv",
-                         "text/comma-separated-values,text/plain",
-                         ".csv")),
-    # Input: Checkbox if file has header ----
-    checkboxInput("header", "Header Row", TRUE)
-    
-  ), 
-  mainPanel(
-    DT::dataTableOutput("table1")
-  )
+
 )
 
 server <- function(input, output, session) {
@@ -63,7 +64,8 @@ server <- function(input, output, session) {
            validate("Invalid file; Please upload a .csv file")
     )
   })
-
+  
+  
   output$table1 <- DT::renderDataTable({
     
     DT::datatable(df(), options = list(
@@ -72,10 +74,9 @@ server <- function(input, output, session) {
     )
   })
   
-  # will need to include a call to all of the server functions of my separate modules
-  req(input$file1)
-  freqServer("freq1", df())
-  univariateServer("uni1")
+  # will need to include a call to all of the server functions of my separate module
+  freqServer("freq1", df)
+  #univariateServer("uni1")
 }
 
 shinyApp(ui = ui, server = server)

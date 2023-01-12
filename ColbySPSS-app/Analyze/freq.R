@@ -6,6 +6,7 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
 
 freqUI <- function(id) {
   
+  ns <- NS(id)
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))
@@ -17,35 +18,33 @@ freqUI <- function(id) {
     fluidRow(
       column (
         width = 8,
-        uiOutput("sortable")),
+        uiOutput(ns("sortable"))),
       column(
         # Buttons
         width = 4,
-        actionButton(NS("stat"), "Statistics"),
-        actionButton(NS("chart"), "Charts"),
-        actionButton(NS("format"), "Format"),
+        actionButton(ns("stat"), "Statistics"),
+        actionButton(ns("chart"), "Charts"),
+        actionButton(ns("format"), "Format"),
       )
     ), 
     fluidRow (
       column (
         width = 10,
-        textOutput("results")
+        textOutput(ns("results"))
       )
     )
     
   )
 }
 
-
-
-freqServer <- function(id, df) {
+freqServer <- function(id, data) {
   
-  stopifnot(is.reactive(df))
+  stopifnot(is.reactive(data))
+  vars <- NULL
   
   moduleServer(id, function(input, output, session) {
     
-    vars <- reactive({names(df())})
-    #print(vars())
+    vars <- reactive({find_vars(data())})
     
     output$sortable <- renderUI({
       bucket_list(
@@ -54,20 +53,60 @@ freqServer <- function(id, df) {
         orientation = "horizontal",
         add_rank_list(
           text = "variables",
-          labels = NULL,
-          input_id = NS("rank_list_1")
-        ),
+          labels = vars(),
+          input_id = "rank_list_1"),
         add_rank_list(
           text = "Calculate frequencies for:",
           labels = NULL,
-          input_id = NS("rank_list_2")
+          input_id = "rank_list_2"
         ))
     
   })
     observeEvent(input$stat, {
-      results_stat <- statsModal(input, output, session, input$rank_list_2)
-      output$results <- renderPrint(results_stat)
+      showModal(statsModal(input, output, session, input$rank_list_2))
     })
+  
+  # Wait for the user to hit submit
+  observeEvent(input$submit, {
+    
+    # close the pop-up window
+    removeModal()
+    
+    # Central Tendency ---------------------------------------------------------
+    centenSelect <- mget(input$centen)
+    print("here")
+    
+    results <- list()
+    # use lapply to apply each function selected to each variable chosen
+    if (c("Mean") %in% centenSelect) {
+      print("got here")
+      results.append(lapply(vars_selected, mean))
+    }
+    if ("Median" %in% centenSelect) {
+      results.append(lapply(vars_selected, median))
+    }
+    if ("Mode" %in% centenSelect) {
+    # Have to create own mode function
+      results.append(lapply(vars_selected, function(x) {
+      uniqx <- unique(x)
+      uniqx[which.max(tabulate(match(x, uniqx)))]
+    }))
+    }
+    if ("Sum" %in% centenSelect) {
+     results.append(lapply(vars_selected, sum))
+    }
+    
+    output$results <- renderPrint(results)
+    
   })
+  
+  })
+}
+
+# Helper Function - find_vars() ------------------------------------------------
+# Extracts the variables from the given dataset
+find_vars <- function(data) {
+  stopifnot(is.data.frame(data))
+  names(data)
 }
 
