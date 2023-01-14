@@ -30,13 +30,16 @@ freqUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        textOutput(ns("results"))
+        textOutput(ns("frequencies")),
+        textOutput(ns("stat_results")),
+        textOutput(ns("chart_results")),
       )
     )
     
   )
 }
 
+# Server Function --------------------------------------------------------------
 freqServer <- function(id, data) {
   
   stopifnot(is.reactive(data))
@@ -47,6 +50,7 @@ freqServer <- function(id, data) {
     vars <- reactive({find_vars(data())})
     
     output$sortable <- renderUI({
+      ns <- NS(id)
       bucket_list(
         header = "Drag the items in any desired bucket",
         group_name = "bucket_list_group",
@@ -54,16 +58,21 @@ freqServer <- function(id, data) {
         add_rank_list(
           text = "variables",
           labels = vars(),
-          input_id = "rank_list_1"),
+          input_id = ns("rank_list_1")),
         add_rank_list(
           text = "Calculate frequencies for:",
           labels = NULL,
-          input_id = "rank_list_2"
+          input_id = ns("rank_list_2")
         ))
     
   })
+    
+    #observeEvent(input$rank_list_2, {
+     # checkFactor(input$rank_list_2, data())
+    #})
+    
     observeEvent(input$stat, {
-      showModal(statsModal(input, output, session, input$rank_list_2))
+      showModal(statsModal(input, output, session))
     })
   
   # Wait for the user to hit submit
@@ -72,43 +81,26 @@ freqServer <- function(id, data) {
     # close the pop-up window
     removeModal()
     
+    cols <- extractCols(input$rank_list_2, data())
+    
     # Central Tendency ---------------------------------------------------------
     if (!is.null(input$centen)) {
-      centenSelect <- unname(unlist(mget(input$centen, inherit = TRUE))) 
-    
-    results <- list()
-    # use lapply to apply each function selected to each variable chosen
-    if (c("Mean") %in% centenSelect) {
-      # need to fix this for multiple inputs
-      results.append(lapply(data() %>% select(input$rank_list_2), mean))
+      centen_results <- centraltendency(cols, input$centen)
     }
     
-    if (c("Median") %in% centenSelect) {
-      results.append(lapply(data() %>% select(input$rank_list_2), median))
-    }
-    #if ("Mode" %in% centenSelect) {
-    # Have to create own mode function
-      #results.append(lapply(data()[input$rank_list_2], function(x) {
-      #uniqx <- unique(x)
-      #uniqx[which.max(tabulate(match(x, uniqx)))]
-    #}))
-    #}
-    if ("Sum" %in% centenSelect) {
-     results.append(lapply(data() %>% select(input$rank_list_2), sum))
+    # Dispersion ---------------------------------------------------------------
+    if (!is.null(input$disp)) {
+      disp_results <- dispersion(cols, input$disp)
     }
     
-    }
-    output$results <- renderPrint(results)
-    
+    # Come back to this, make the output an R Markdown file
+    # Should store results as a dictionary of the function/variable and the result
+    output$stat_results <- renderText({paste0("Central Tendency", centen_results,
+                                                "Dispersion", disp_results)})
+
   })
   
   })
 }
 
-# Helper Function - find_vars() ------------------------------------------------
-# Extracts the variables from the given dataset
-find_vars <- function(data) {
-  stopifnot(is.data.frame(data))
-  names(data)
-}
 

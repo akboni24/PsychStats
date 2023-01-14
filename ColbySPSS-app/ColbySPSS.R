@@ -59,11 +59,7 @@ server <- function(input, output, session) {
   # Converts given csv to a data frame and turns it into a data table
   df <- reactive({
     req(input$file1)
-    ext <- tools::file_ext(input$file1$name)
-    switch(ext,
-           csv = vroom::vroom(input$file1$datapath, delim = ","),
-           validate("Invalid file; Please upload a .csv file")
-    )
+    load_file(input$file1$name, input$file1$datapath)
   })
   
   
