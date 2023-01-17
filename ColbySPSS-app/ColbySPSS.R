@@ -24,7 +24,10 @@ ui <- navbarPage(
                                     "text/comma-separated-values,text/plain",
                                     ".csv")),
                # Input: Checkbox if file has header ----
-               checkboxInput("header", "Header Row", TRUE)), 
+               # CURRENTLY NOT BEING USED
+               checkboxInput("header", "Header Row", TRUE), 
+              # Input: Check all categorical variables
+                checkboxGroupInput("factors", "Please check all categorical variables: ", character(0))),
             # Main Panel for the data table ---------------
             mainPanel(
              DT::dataTableOutput("table1")
@@ -51,7 +54,10 @@ ui <- navbarPage(
              tabPanel("Linear", "lm")),
   navbarMenu("Graphs", "seven"),
 
+
 )
+
+
 
 server <- function(input, output, session) {
   
@@ -60,16 +66,33 @@ server <- function(input, output, session) {
   df <- reactive({
     req(input$file1)
     load_file(input$file1$name, input$file1$datapath)
+    #mutate_if(df, is.character, as.factor)
   })
   
   
   output$table1 <- DT::renderDataTable({
     
-    DT::datatable(df(), options = list(
+    DT::datatable(df(), editable = "cell", options = list(
       lengthMenu = list(c(5, 15, -1), c('5', '15', 'All')),
       pageLength = 15)
     )
   })
+  
+  # Updates the checkboxGroupInput with all of the variable names
+  observeEvent(input$file1, {
+    updateCheckboxGroupInput(session, "factors", choices = find_vars(df()))
+  })
+  
+  mydf <- reactiveValues(data=NULL)
+  
+  observe({
+    mydf$data <- df()
+  })
+  
+  observeEvent(input$factors, {
+    mydf$data[input$factors] <- lapply(mydf$data[input$factors], factor)
+  })
+  
   
   # will need to include a call to all of the server functions of my separate module
   freqServer("freq1", df)

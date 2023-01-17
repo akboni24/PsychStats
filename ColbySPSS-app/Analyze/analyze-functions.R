@@ -33,16 +33,23 @@ extractCols <- function(vars, data) {
   data %>% select(vars)
 }
 
+# Helper function - makeFactor() ----------------------------------------------
+# Turns a give variable into a factor
+# Arguments: var (variable name) and data (a dataframe)
+# Returns: Nothing
+# ------------------------------------------------------------------------------
+#makeFactor <- function(vars, data) {
+ # df[vars] <- lapply(df[vars] , factor)
+#}
+
 # Helper function - checkFactor() ----------------------------------------------
 # Checks if every given variable is a categorical variable
 # Arguments: vars (list of variable names)
 # Returns: Nothing, prints an error if not a categorical variable
 # ------------------------------------------------------------------------------
-checkFactor <- function(vars, data) {
-  cols <- data %>% select(vars)
-  for (x in names(cols)) {
-    stopifnot(is.factor(x), "Error: Frequencies can only be calculated for categorical variables") 
-  }
+checkFactor <- function(var, data) {
+  col <- data %>% select(var)
+  is.factor(col)
 }
 
 # Statistics Modal Function ----------------------------------------------------
@@ -62,6 +69,16 @@ statsModal <- function(input, output, session) {
   )
   
 }
+
+# Dispersion Function ----------------------------------------------------------
+# Creates a checkboxGroupInput for measures of dispersion
+# Arguments: input, output, session
+# ------------------------------------------------------------------------------
+disp <- function(session) {
+  ns <- session$ns
+  checkboxGroupInput(ns("disp"), label = "Dispersion", c("Std. Deviation", "Variance", "Range", "Minimum", "Maximum", "S.E. Mean"))
+}
+
 
 # Helper function - centraltendency() ------------------------------------------
 # Calculates measures of central tendency on a group of variables
@@ -135,7 +152,25 @@ dispersion <- function(cols, func) {
     results <- append(results, maxs)
   }
   
+  # add S.E. mean
+  
   results
   
 }
 
+# Options Modal Function for Descriptives --------------------------------------
+# Creates a modal (pop-up window) that asks for user input of what stats they want to be calculated
+# Arguments: Shiny arguments input, output, and session
+# ------------------------------------------------------------------------------
+descOptionsModal <- function(input, output, session) {
+  ns <- session$ns
+  # Create the pop-up window
+  modalDialog(
+    title = "Descriptives: Options",
+    checkboxGroupInput(ns("desc"), label = NULL, c("Mean", "Sum"), selected = "Mean"),
+    disp(session),
+    checkboxGroupInput(ns("dist"), label = "Distribution", c("Skewness", "Kurtosis")),
+    footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
+  )
+  
+}

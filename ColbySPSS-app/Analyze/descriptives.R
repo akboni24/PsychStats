@@ -53,11 +53,11 @@ descriptivesServer <- function(id, data) {
     
     output$sortable <- renderUI({
       bucket_list(
-        header = "Variables",
+        header = NULL,
         group_name = "bucket_list_group",
         orientation = "horizontal",
         add_rank_list(
-          text = "variables",
+          text = "Variables",
           labels = vars(),
           input_id = "rank_list_1"),
         add_rank_list(
@@ -67,6 +67,12 @@ descriptivesServer <- function(id, data) {
         ))
       
     })
+    
+    observeEvent(input$options, {
+      showModal(descOptionsModal(input, output, session))
+    })
+    
+    
   })
 }
 

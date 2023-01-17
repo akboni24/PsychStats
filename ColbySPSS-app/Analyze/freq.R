@@ -1,17 +1,19 @@
 library(shiny)
 library(sortable)
 library(purrr)
+library(shinyFeedback)
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
 
 freqUI <- function(id) {
-  
+
   ns <- NS(id)
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))
     ),
     
+    shinyFeedback::useShinyFeedback(),
     titlePanel("Frequencies"),
   
     # Creates two drag and drop buckets
@@ -24,7 +26,7 @@ freqUI <- function(id) {
         width = 4,
         actionButton(ns("stat"), "Statistics"),
         actionButton(ns("chart"), "Charts"),
-        actionButton(ns("format"), "Format"),
+        actionButton(ns("format"), "Format")
       )
     ), 
     fluidRow (
@@ -67,9 +69,12 @@ freqServer <- function(id, data) {
     
   })
     
-    #observeEvent(input$rank_list_2, {
-     # checkFactor(input$rank_list_2, data())
-    #})
+    observeEvent(input$rank_list_2, {
+      factor <- checkFactor(input$rank_list_2, data())
+      write.csv(factor, file="/Users/ainsleybonin/Documents/git_repos/SPSS-R/factor.csv")
+      shinyFeedback::feedbackWarning("rank_list_2", !factor, text = "Please select a categorical variable")
+    })
+
     
     observeEvent(input$stat, {
       showModal(statsModal(input, output, session))
@@ -84,11 +89,13 @@ freqServer <- function(id, data) {
     cols <- extractCols(input$rank_list_2, data())
     
     # Central Tendency ---------------------------------------------------------
+    centen_results <- NULL
     if (!is.null(input$centen)) {
       centen_results <- centraltendency(cols, input$centen)
     }
     
     # Dispersion ---------------------------------------------------------------
+    disp_result <- NULL
     if (!is.null(input$disp)) {
       disp_results <- dispersion(cols, input$disp)
     }
