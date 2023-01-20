@@ -5,6 +5,9 @@ library(bslib)
 # this, I just haven't gotten it to work yet
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/freq.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/descriptives.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneSampleT.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/indSamplesT.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/pairedSamplesT.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
@@ -43,9 +46,9 @@ ui <- navbarPage(
              tabPanel("Descriptives", fluidPage(descriptivesUI("desc1"))),
              "Compare Means",
              tabPanel("Means", "m"),
-             tabPanel("One Sample T Test", "o"),
-             tabPanel("Ind Samples T Test", "I"),
-             tabPanel("Paired Samples T Test", "P"),
+             tabPanel("One Sample T Test", fluidPage(oneSampleTUI("oneT"))),
+             tabPanel("Ind Samples T Test", fluidPage(indSamplesTUI("indT"))),
+             tabPanel("Paired Samples T Test", fluidPage(pairedSamplesTUI("pT"))),
              tabPanel("One Way ANOVA", "anova"),
              "General Linear Model",
              #tabPanel("Univariate", fluidPage(univariateUI("uni1"))),
@@ -83,20 +86,13 @@ server <- function(input, output, session) {
     updateCheckboxGroupInput(session, "factors", choices = find_vars(df()))
   })
   
-  mydf <- reactiveValues(data=NULL)
-  
-  observe({
-    mydf$data <- df()
-  })
-  
-  observeEvent(input$factors, {
-    mydf$data[input$factors] <- lapply(mydf$data[input$factors], factor)
-  })
-  
   
   # will need to include a call to all of the server functions of my separate module
   freqServer("freq1", df)
   descriptivesServer("desc1", df)
+  oneSampleTServer("oneT", df)
+  indSamplesTServer("indT", df)
+  pairedSamplesTServer("pT", df)
 }
 
 shinyApp(ui = ui, server = server)

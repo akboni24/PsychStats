@@ -52,6 +52,7 @@ descriptivesServer <- function(id, data) {
     vars <- reactive({find_vars(data())})
     
     output$sortable <- renderUI({
+      ns <- NS(id)
       bucket_list(
         header = NULL,
         group_name = "bucket_list_group",
@@ -59,20 +60,56 @@ descriptivesServer <- function(id, data) {
         add_rank_list(
           text = "Variables",
           labels = vars(),
-          input_id = "rank_list_1"),
+          input_id = ns("rank_list_1")),
         add_rank_list(
           text = "Calculate descriptives for:",
           labels = NULL,
-          input_id = "rank_list_2"
+          input_id = ns("rank_list_2")
         ))
       
+    })
+    
+    observeEvent(input$rank_list_2, {
+      num <- checkNumeric(input$rank_list_2, data())
+      shinyFeedback::feedbackWarning("rank_list_2", !num, text = "Please select a numeric variable")
     })
     
     observeEvent(input$options, {
       showModal(descOptionsModal(input, output, session))
     })
     
+    observeEvent(input$submit, {
+      removeModal()
+    })
+    
+    # Wait for the user to hit submit
+    observeEvent(input$ok, {
+      
+      cols <- extractCols(input$rank_list_2, data())
+      
+      # Descriptives -----------------------------------------------------------
+      descriptives <- lapply(input$rank_list_2, summary)
+      
+      # Central Tendency -------------------------------------------------------
+      centen_results <- NULL
+      if (!is.null(input$desc)) {
+        centen_results <- centraltendency(cols, input$desc)
+      }
+      
+      # Dispersion -------------------------------------------------------------
+      disp_result <- NULL
+      if (!is.null(input$disp)) {
+        disp_results <- dispersion(cols, input$disp)
+      }
+      
+      # Come back to this, make the output an R Markdown file
+      # Should store results as a dictionary of the function/variable and the result
+      output$results <- renderText({paste0("Descriptives", descriptives, "Central Tendency", centen_results,
+                                                "Dispersion", disp_results)})
+      
+    })
     
   })
+
 }
 

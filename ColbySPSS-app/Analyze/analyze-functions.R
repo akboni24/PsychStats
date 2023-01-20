@@ -45,11 +45,21 @@ extractCols <- function(vars, data) {
 # Helper function - checkFactor() ----------------------------------------------
 # Checks if every given variable is a categorical variable
 # Arguments: vars (list of variable names)
-# Returns: Nothing, prints an error if not a categorical variable
+# Returns: Boolean
 # ------------------------------------------------------------------------------
 checkFactor <- function(var, data) {
   col <- data %>% select(var)
   is.factor(col)
+}
+
+# Helper function - checkNumeric() ----------------------------------------------
+# Checks if every given variable is a numeric variable
+# Arguments: vars (list of variable names)
+# Returns: Boolean
+# ------------------------------------------------------------------------------
+checkNumeric <- function(var, data) {
+  col <- data %>% select(var)
+  is.numeric(col)
 }
 
 # Statistics Modal Function ----------------------------------------------------
@@ -174,3 +184,36 @@ descOptionsModal <- function(input, output, session) {
   )
   
 }
+
+# Options Modal Function for T Tests -------------------------------------------
+# Creates a modal (pop-up window) that asks for user input of confidence intervals
+# Arguments: Shiny arguments input, output, and session
+# ------------------------------------------------------------------------------
+ttestOptionsModal <- function(input, output, session) {
+  ns <- session$ns
+  # Create the pop-up window
+  modalDialog(
+    title = "T Test: Options",
+    numericInput(ns("confint"), label = "Confidence Interval Percentage: ", value = "0.95"),
+    radioButtons(ns("mv"), label = "Missing Values", 
+                 choices = list("Exclude cases analysis by analysis" = 1, "Exclude cases listwise" = 2), selected = 1),
+    footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
+  )
+}
+
+# Post Hoc Modal for ANOVA -----------------------------------------------------
+# Creates a modal (pop-up window) for multiple comparisons options
+# Arguments: Shiny arguments input, output, and session
+# ------------------------------------------------------------------------------
+anovaPostHocModal <- function(input, output, session) {
+  ns <- session$ns
+  modalDialog (
+    title = "ANOVA: Post Hoc Multiple Comparisons",
+    checkboxGroupInput(ns("eva"), label = "Equal Variances Assumed", c("LSD", "Bonferroni", "Tukey", "Tukey's-b")),
+    footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), "Continue"))
+  )
+}
+
+# Options Modal for ANOVA ------------------------------------------------------
+# Creates a modal (pop-up window) 
+

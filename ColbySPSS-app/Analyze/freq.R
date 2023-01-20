@@ -71,7 +71,6 @@ freqServer <- function(id, data) {
     
     observeEvent(input$rank_list_2, {
       factor <- checkFactor(input$rank_list_2, data())
-      write.csv(factor, file="/Users/ainsleybonin/Documents/git_repos/SPSS-R/factor.csv")
       shinyFeedback::feedbackWarning("rank_list_2", !factor, text = "Please select a categorical variable")
     })
 
