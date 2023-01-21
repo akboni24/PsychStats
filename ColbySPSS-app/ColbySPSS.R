@@ -8,6 +8,7 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/descriptives.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneSampleT.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/indSamplesT.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/pairedSamplesT.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneWayANOVA.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
@@ -49,7 +50,7 @@ ui <- navbarPage(
              tabPanel("One Sample T Test", fluidPage(oneSampleTUI("oneT"))),
              tabPanel("Ind Samples T Test", fluidPage(indSamplesTUI("indT"))),
              tabPanel("Paired Samples T Test", fluidPage(pairedSamplesTUI("pT"))),
-             tabPanel("One Way ANOVA", "anova"),
+             tabPanel("One Way ANOVA", fluidPage(oneWayAnovaUI("owanova"))),
              "General Linear Model",
              #tabPanel("Univariate", fluidPage(univariateUI("uni1"))),
              tabPanel("Multivariate", "m"),
@@ -93,6 +94,7 @@ server <- function(input, output, session) {
   oneSampleTServer("oneT", df)
   indSamplesTServer("indT", df)
   pairedSamplesTServer("pT", df)
+  oneWayAnovaServer("owanova", df)
 }
 
 shinyApp(ui = ui, server = server)

@@ -209,11 +209,42 @@ anovaPostHocModal <- function(input, output, session) {
   ns <- session$ns
   modalDialog (
     title = "ANOVA: Post Hoc Multiple Comparisons",
-    checkboxGroupInput(ns("eva"), label = "Equal Variances Assumed", c("LSD", "Bonferroni", "Tukey", "Tukey's-b")),
+    checkboxGroupInput(ns("eva"), label = "Equal Variances Assumed", c("LSD", "Bonferroni", "Tukey's HSD")),
     footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), "Continue"))
   )
 }
 
 # Options Modal for ANOVA ------------------------------------------------------
-# Creates a modal (pop-up window) 
+# Creates a modal (pop-up window) for optional statistics to be calculated
+# Arguments: Shiny arguments input, output, and session
+# COME BACK - could make missing values a function, used multiple times
+# ------------------------------------------------------------------------------
+anovaOptionsModal <- function(input, output, session) {
+  ns <- session$ns
+  modalDialog (
+    title = "ANOVA: Options",
+    checkboxGroupInput(ns("stat"), label = "Statistics", c("Descriptive", "Homogeneity of variance test", "Welch test")),
+    radioButtons(ns("mv"), label = "Missing Values", 
+                 choices = list("Exclude cases analysis by analysis" = 1, "Exclude cases listwise" = 2), selected = 1),
+    numericInput(ns("confint"), label = "Confidence Intervals (Level%)", value = "0.95"),
+    footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), "Continue"))
+  )
+}
+
+
+# Post Hoc Calculations Function for ANOVA -------------------------------------
+# Calculates post hoc tests for an anova object
+# Arguments: tests (list of tests), aov (anova object), and conflvl (a confidence level)
+# ------------------------------------------------------------------------------
+postHocCalc <- function(tests, var1, var2, conflvl) {
+  
+  if ("Bonferroni" %in% tests) {
+    return(pairwise.t.test(var1, var2, p.adj = "bonf"))
+  } else if ("LSD" %in% tests) {
+    return(pairwise.t.test(var1, var2, p.adj = "lsd"))
+  } else if ("Tukey's HSD" %in% tests) {
+    return(TukeyHSD(aov(var ~ var2)))
+  }
+  
+}
 
