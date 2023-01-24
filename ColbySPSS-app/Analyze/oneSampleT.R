@@ -39,7 +39,7 @@ oneSampleTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        textOutput(ns("results"))
+        verbatimTextOutput(ns("results"))
       )
     )
     
@@ -101,7 +101,7 @@ oneSampleTServer <- function(id, data) {
       
       # Come back to this, make the output an R Markdown file
       # Should store results as a dictionary of the function/variable and the result
-      output$results <- renderText({paste0(results)})
+      output$results <- renderPrint({results})
       
     })
     

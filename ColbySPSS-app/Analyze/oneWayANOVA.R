@@ -43,12 +43,14 @@ oneWayAnovaUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        h3("Statistics"),
+        verbatimTextOutput(ns("statsresults")),
         h3("ANOVA"),
         tableOutput(ns("results")),
         h3("Effect Sizes"),
         tableOutput(ns("esResults")),
         h3("Post Hoc Tests"),
-        textOutput(ns("phTests"))
+        verbatimTextOutput(ns("phTests"))
       )
     )
   )
@@ -128,6 +130,13 @@ oneWayAnovaServer <- function(id, data) {
         return(anovaResults)
       })
       
+      # Calculate chosen statistics --------------------------------------------
+      if (!is.null(input$stat)) {
+        output$statsresults <- renderPrint({
+          anovaOptionsCalc(input$stat, col1, col2)
+        })
+      }
+      
       # Calculate effect sizes -------------------------------------------------
       esResults <- list()
       if (input$es == TRUE) {
@@ -145,8 +154,8 @@ oneWayAnovaServer <- function(id, data) {
       }
       
       if (!is.null(input$eva)) {
-        output$phTests <- renderText({
-          paste0(postHocCalc(input$eva, col1, col2, confint))
+        output$phTests <- renderPrint({
+          postHocCalc(input$eva, col1, col2, confint)
         })
       }
       
