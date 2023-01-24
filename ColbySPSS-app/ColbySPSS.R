@@ -9,6 +9,7 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneSampleT.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/indSamplesT.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/pairedSamplesT.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneWayANOVA.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/univariate.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
@@ -43,8 +44,8 @@ ui <- navbarPage(
   navbarMenu("Transform", "five"),
   navbarMenu("Analyze", 
              "Descriptive Stats", # section headers
-             tabPanel("Frequencies", fluidPage(freqUI("freq1"))),
-             tabPanel("Descriptives", fluidPage(descriptivesUI("desc1"))),
+             tabPanel("Frequencies", fluidPage(freqUI("freq"))),
+             tabPanel("Descriptives", fluidPage(descriptivesUI("desc"))),
              "Compare Means",
              tabPanel("Means", "m"),
              tabPanel("One Sample T Test", fluidPage(oneSampleTUI("oneT"))),
@@ -52,7 +53,7 @@ ui <- navbarPage(
              tabPanel("Paired Samples T Test", fluidPage(pairedSamplesTUI("pT"))),
              tabPanel("One Way ANOVA", fluidPage(oneWayAnovaUI("owanova"))),
              "General Linear Model",
-             #tabPanel("Univariate", fluidPage(univariateUI("uni1"))),
+             tabPanel("Univariate", fluidPage(univariateUI("uni"))),
              tabPanel("Multivariate", "m"),
              "Regression",
              tabPanel("Linear", "lm")),
@@ -89,12 +90,13 @@ server <- function(input, output, session) {
   
   
   # will need to include a call to all of the server functions of my separate module
-  freqServer("freq1", df)
-  descriptivesServer("desc1", df)
+  freqServer("freq", df)
+  descriptivesServer("desc", df)
   oneSampleTServer("oneT", df)
   indSamplesTServer("indT", df)
   pairedSamplesTServer("pT", df)
   oneWayAnovaServer("owanova", df)
+  univariateServer("uni", df)
 }
 
 shinyApp(ui = ui, server = server)

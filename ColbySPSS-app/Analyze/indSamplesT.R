@@ -106,21 +106,19 @@ indSamplesTServer <- function(id, data) {
         confint = input$confint
       }
       
-      cols <- extractCols(input$rank_list_2, data())
-      grouping <- as.factor(data() %>% pull(input$rank_list_3))
+      col <- data() %>% pull(input$rank_list_2)
+      grouping <- data() %>% pull(input$rank_list_3)
       # Warning if there are more than two groups
       if (nlevels(grouping) > 2) {
         output$results <- renderText({paste("Grouping variable has more than 2 groups. Please select a different variable or conduct a One Way ANOVA.")})
       } else{
-        results <- lapply(cols ~ grouping, t.test, alternative="two.sided", conf.level = confint)
+        results <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = TRUE)
         
         # Come back to this, make the output an R Markdown file
         # Should store results as a dictionary of the function/variable and the result
         output$results <- renderPrint({results})
       }
 
-
-      
     })
     
   })

@@ -354,7 +354,6 @@ uniPostHocCalc <- function(tests, y, factor1, factor2) {
   
   results <- list()
   if ("Bonferroni" %in% tests) {
-    
     append(results, pairwise.t.test(y, factor1, p.adj = "bonf"))
     append(results, pairwise.t.test(y, factor2, p.adj = "bonf"))
   } else if ("LSD" %in% tests) {
