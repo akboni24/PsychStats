@@ -256,9 +256,13 @@ postHocCalc <- function(tests, var1, var2, conflvl) {
 # Calculates the optional statistics for an aov object
 # Arguments: tests (list of tests), formula (formula for anova)
 # ------------------------------------------------------------------------------
-anovaOptionsCalc <- function(tests, vars, formula) {
+anovaOptionsCalc <- function(tests, formula, var1, var2, var3 = NULL) {
   results <- list()
-  df <- data.frame(vars)
+  if (is.null(var3)) {
+    df <- data.frame(var1, var2)
+  } else {
+    df <- data.frame(var1, var2, var3)
+  }
   if ("Descriptives" %in% tests) {
     results <- append(results, summary(df))
   }

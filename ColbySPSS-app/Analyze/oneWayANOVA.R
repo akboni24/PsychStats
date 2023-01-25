@@ -133,7 +133,7 @@ oneWayAnovaServer <- function(id, data) {
       # Calculate chosen statistics --------------------------------------------
       if (!is.null(input$stat)) {
         output$statsresults <- renderPrint({
-          anovaOptionsCalc(input$stat, col1, col2)
+          anovaOptionsCalc(input$stat, col1 ~ col2, col1, col2)
         })
       }
       

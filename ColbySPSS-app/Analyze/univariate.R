@@ -171,7 +171,7 @@ univariateServer <- function(id, data) {
       # Calculate chosen statistics --------------------------------------------
       if (!is.null(input$stat)) {
         output$statsresults <- renderPrint({
-          anovaOptionsCalc(input$stat, vars(), col1 ~ col2 * col3)
+          anovaOptionsCalc(input$stat, col1 ~ col2 * col3, col1, col2, col3)
         })
       }
       
