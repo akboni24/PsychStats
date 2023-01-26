@@ -40,6 +40,9 @@ pairedSamplesTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        h3("Paired-Samples Statistics"),
+        tableOutput(ns("descr")),
+        h3("Paired Samples Test"),
         verbatimTextOutput(ns("results"))
       )
     )
@@ -109,6 +112,10 @@ pairedSamplesTServer <- function(id, data) {
       
       col1 <- data() %>% pull(input$rank_list_2)
       col2 <- data() %>% pull(input$rank_list_3)
+      
+      output$descr <- renderTable({
+        ttestStats(col1, col2)
+      })
       
       results <- t.test(col1, col2, paired = TRUE, conf.level = confint)
       

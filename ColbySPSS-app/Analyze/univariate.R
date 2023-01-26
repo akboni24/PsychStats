@@ -2,7 +2,7 @@ library(shiny)
 library(sortable)
 library(effectsize)
 library(DescTools)
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/anova-functions.R")
 # User Interface ---------------------------------------------------------------
 univariateUI <- function(id) {
   
@@ -43,13 +43,13 @@ univariateUI <- function(id) {
     ),
     fluidRow (
       column (
-        width = 10,
+        width = 12,
         h3("Descriptive Statistics"),
         verbatimTextOutput(ns("statsresults")),
-        h3("Effect Sizes"),
-        tableOutput(ns("esResults")),
         h3("ANOVA"),
         verbatimTextOutput(ns("results")),
+        h3("Effect Sizes"),
+        tableOutput(ns("esResults")),
         h3("Estimated Marginal Means"),
         verbatimTextOutput(ns("emResults")),
         h3("Post Hoc Tests"),

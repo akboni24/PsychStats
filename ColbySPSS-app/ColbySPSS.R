@@ -54,7 +54,7 @@ ui <- navbarPage(
              tabPanel("One Way ANOVA", fluidPage(oneWayAnovaUI("owanova"))),
              "General Linear Model",
              tabPanel("Univariate", fluidPage(univariateUI("uni"))),
-             tabPanel("Multivariate", "m"),
+             tabPanel("Repeated Measures", "m"),
              "Regression",
              tabPanel("Linear", "lm")),
   navbarMenu("Graphs", "seven"),

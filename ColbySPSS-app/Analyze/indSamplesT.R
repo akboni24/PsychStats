@@ -39,7 +39,13 @@ indSamplesTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        verbatimTextOutput(ns("results"))
+        h3("Two-Sample Statistics"),
+        tableOutput(ns("descr")),
+        h3("Two-Sample Test"),
+        h5("Equal Variances Assumed"),
+        verbatimTextOutput(ns("results")),
+        h5("Equal Variances Not Assumed"),
+        verbatimTextOutput(ns("results2"))
       )
     )
   )
@@ -108,15 +114,22 @@ indSamplesTServer <- function(id, data) {
       
       col <- data() %>% pull(input$rank_list_2)
       grouping <- data() %>% pull(input$rank_list_3)
+      
+      output$descr <- renderTable({
+        indttestStats(col, grouping)
+      })
+      
       # Warning if there are more than two groups
       if (nlevels(grouping) > 2) {
         output$results <- renderText({paste("Grouping variable has more than 2 groups. Please select a different variable or conduct a One Way ANOVA.")})
       } else{
         results <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = TRUE)
-        
+        results2 <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = FALSE)
         # Come back to this, make the output an R Markdown file
         # Should store results as a dictionary of the function/variable and the result
         output$results <- renderPrint({results})
+        output$results2 <- renderPrint({results2})
+        
       }
 
     })

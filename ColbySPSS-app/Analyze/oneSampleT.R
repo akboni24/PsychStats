@@ -39,6 +39,9 @@ oneSampleTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        h3("One-Sample Statistics"),
+        tableOutput(ns("descr")),
+        h3("One-Sample Test"),
         verbatimTextOutput(ns("results"))
       )
     )
@@ -89,7 +92,12 @@ oneSampleTServer <- function(id, data) {
     # Wait for the user to hit submit
     observeEvent(input$ok, {
       
-      cols <- extractCols(input$rank_list_2, data())
+      cols <- data() %>% pull(input$rank_list_2)
+      
+      output$descr <- renderTable({
+        ttestStats(data() %>% pull(input$rank_list_2))
+      })
+      
       
       if(is.null(input$confint)) {
         confint = 0.95
@@ -97,7 +105,7 @@ oneSampleTServer <- function(id, data) {
         confint = input$confint
       }
 
-      results <- lapply(cols, t.test, mu=input$testValue, alternative="two.sided", conf.level = confint)
+      results <- t.test(cols, mu=input$testValue, alternative="two.sided", conf.level = confint)
       
       # Come back to this, make the output an R Markdown file
       # Should store results as a dictionary of the function/variable and the result
