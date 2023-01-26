@@ -45,7 +45,9 @@ indSamplesTUI <- function(id) {
         h5("Equal Variances Assumed"),
         verbatimTextOutput(ns("results")),
         h5("Equal Variances Not Assumed"),
-        verbatimTextOutput(ns("results2"))
+        verbatimTextOutput(ns("results2")),
+        h5("Effect Sizes"),
+        verbatimTextOutput(ns("esResults"))
       )
     )
   )
@@ -118,6 +120,11 @@ indSamplesTServer <- function(id, data) {
       output$descr <- renderTable({
         indttestStats(col, grouping)
       })
+      
+      if(input$es == TRUE) {
+        # Check this
+        output$esResults <- renderPrint({cohensD(col ~ grouping)})
+      }
       
       # Warning if there are more than two groups
       if (nlevels(grouping) > 2) {

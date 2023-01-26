@@ -40,10 +40,12 @@ pairedSamplesTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        h3("Paired-Samples Statistics"),
+        h5("Paired-Samples Statistics"),
         tableOutput(ns("descr")),
-        h3("Paired Samples Test"),
-        verbatimTextOutput(ns("results"))
+        h5("Paired Samples Test"),
+        verbatimTextOutput(ns("results")),
+        h5("Effect Sizes"),
+        verbatimTextOutput(ns("esResults"))
       )
     )
   )
@@ -121,7 +123,7 @@ pairedSamplesTServer <- function(id, data) {
       
       if(input$es == TRUE) {
         # Check this
-        append(results, cohensD(col1, col2))
+        output$esResults <- renderPrint({cohensD(col1, col2)})
       }
       
       # Come back to this, make the output an R Markdown file

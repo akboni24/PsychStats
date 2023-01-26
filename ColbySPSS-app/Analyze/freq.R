@@ -29,6 +29,14 @@ freqUI <- function(id) {
         actionButton(ns("format"), "Format")
       )
     ), 
+    fluidRow(
+      column(
+        width = 10,
+        # Should hide the OK button until the user has moved at least one variable....
+        actionButton(ns("ok"), "OK"),
+        actionButton(ns("cancel"), "Cancel")
+      )
+    ),
     fluidRow (
       column (
         width = 10,
@@ -78,9 +86,13 @@ freqServer <- function(id, data) {
     observeEvent(input$stat, {
       showModal(statsModal(input, output, session))
     })
+    
+    observeEvent(input$submit, {
+      removeModal()
+    })
   
   # Wait for the user to hit submit
-  observeEvent(input$submit, {
+  observeEvent(input$ok, {
     
     # close the pop-up window
     removeModal()

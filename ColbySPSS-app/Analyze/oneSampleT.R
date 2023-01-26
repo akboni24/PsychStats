@@ -39,10 +39,12 @@ oneSampleTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        h3("One-Sample Statistics"),
+        h5("One-Sample Statistics"),
         tableOutput(ns("descr")),
-        h3("One-Sample Test"),
-        verbatimTextOutput(ns("results"))
+        h5("One-Sample Test"),
+        verbatimTextOutput(ns("results")),
+        h5("Effect Sizes"),
+        verbatimTextOutput(ns("esResults"))
       )
     )
     
@@ -103,6 +105,11 @@ oneSampleTServer <- function(id, data) {
         confint = 0.95
       } else {
         confint = input$confint
+      }
+      
+      if(input$es == TRUE) {
+        # Check this
+        output$esResults <- renderPrint({cohensD(cols, input$testValue)})
       }
 
       results <- t.test(cols, mu=input$testValue, alternative="two.sided", conf.level = confint)
