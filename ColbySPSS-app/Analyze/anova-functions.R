@@ -217,3 +217,22 @@ uniEMCalc <- function(vars, ciAdj, model, col2, col3) {
     return(emmeans(model, specs = pairwise ~ col2:col3))
   }
 }
+
+# Helper Functions for Test for Simple Effects ---------------------------------
+# Calculates a test of simple effects for Two Way ANOVA
+# Arguments: anova_data (df), x (factor for anova), dep (dependent variable name),
+# sefactor (factor to split data on)
+# ------------------------------------------------------------------------------
+anova_se <- function(anova_data, factor, dep) {
+  dependent_var <- anova_data %>% pull(dep)
+  other_factor <- as.factor(anova_data %>% pull(factor))
+  y <- lm(dependent_var ~ sefactor, data=anova_data)
+  summary(aov(y))
+}
+
+test_simple_effects <- function(anova_data, x, y, sefactor) {
+  se_factor <- as.factor(anova_data %>% pull(sefactor))
+  dfs <- split(anova_data, sefactor)
+  se_results <- lapply(dfs, anova_se, factor=x, dep=y)
+}
+  

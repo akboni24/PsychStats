@@ -2,18 +2,25 @@ library(shiny)
 library(sortable)
 library(effectsize)
 library(DescTools)
-library(tidyr)
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/anova-functions.R")
 # User Interface ---------------------------------------------------------------
-univariateUI <- function(id) {
+repeatedMeasuresUI <- function(id) {
   
   ns <- NS(id)
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
     
-    titlePanel("Univariate"),
+    titlePanel("Repeated Measures"),
     
+    fluidRow(
+      column (
+        width = 12,
+        textInput(ns("ws"), label = "Within-Subject Factor Name: "),
+        numericInput(ns("numlvls"), label = "Number of Levels: ", value=0),
+        actionButton(ns("define"), "Define")
+      )
+    ),
     # Creates two drag and drop buckets
     fluidRow(
       column (
@@ -44,7 +51,7 @@ univariateUI <- function(id) {
     ),
     fluidRow (
       column (
-        width = 12,
+        width = 10,
         h3("Descriptive Statistics"),
         verbatimTextOutput(ns("statsresults")),
         h3("ANOVA"),
@@ -58,21 +65,11 @@ univariateUI <- function(id) {
         h3("Plots"),
         plotOutput(ns("plotResults"))
       )
-    ),
-    fluidRow (
-      column (
-        width = 12,
-        checkboxInput(ns("setest"), "Test for simple effects?", value = FALSE),
-        selectInput(ns("setestvar"), label = "COMPARE", choices = character(0)),
-        selectInput(ns("setestadj"), label = "ADJ", choices = c("Bonferroni", "LSD")),
-        actionButton(ns("seOK"), label = "OK"),
-        verbatimTextOutput(ns("seResults"))
-      )
     )
   )
 }
 
-univariateServer <- function(id, data) {
+repeatedMeasuresServer <- function(id, data) {
   
   stopifnot(is.reactive(data))
   vars <- NULL
@@ -83,6 +80,9 @@ univariateServer <- function(id, data) {
     
     # Display the drag and drop buckets ----------------------------------------
     output$sortable <- renderUI({
+      # JUST IMPLEMENT A CHECK THAT WARNS THEM IF THEY HAVENT MAPPED A VARIABLE TO 
+      # EACH FACTOR LEVEL YET
+      req(input$define)
       ns <- NS(id)
       bucket_list(
         header = NULL,
@@ -93,18 +93,17 @@ univariateServer <- function(id, data) {
           labels = vars(),
           input_id = ns("rank_list_1")),
         add_rank_list(
-          text = "Dependent Variable: ",
+          text = "Within Subjects Variables: ",
           labels = NULL,
           input_id = ns("rank_list_2")
         ), 
         add_rank_list(
-          text = "Fixed Factor(s): ",
+          text = "Between Subjects Factor(s): ",
           labels = NULL,
           input_id = ns("rank_list_3")
         ))
       
     })
-    
     
     # Check that the variables are numeric and factor --------------------------
     observeEvent(input$rank_list_2, {
@@ -151,18 +150,21 @@ univariateServer <- function(id, data) {
       removeModal()
     })
     
-    
     # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
       # Calculate the ANOVA and display the results in a table -----------------
-      col1 <- data() %>% pull(input$rank_list_2)
-      col2 <- as.factor(data() %>% pull(input$rank_list_3[1]))
-      col3 <- as.factor(data() %>% pull(input$rank_list_3[2]))
-      anovaResults <- aov(col1 ~ col2 + col3 + col2:col3)
+      data_prepared <- data() %>%
+                        gather(key="within_var", value="dependent_var", input$rank_list_2) %>%
+                        convert_as_factor(within_var)
+      
+      #dep_col <- data() %>% pull(input$rank_list_2)
+      #col2 <- as.factor(data() %>% pull(input$rank_list_3[1]))
+      #col3 <- as.factor(data() %>% pull(input$rank_list_3[2]))
+      anovaResults <- anova_test(data=data_prepared, dv=dependent_var, wid=colnames(data())[1], within=within_var)
       
       output$results <- renderPrint({
-        summary(anovaResults)
+        return(get_anova_table(anovaResults))
       })
       
       # Make plots -------------------------------------------------------------
@@ -201,18 +203,18 @@ univariateServer <- function(id, data) {
       if (!is.null(input$eva)) {
         if (input$rank_list_3[1] %in% input$postHocVars && input$rank_list_3[2] %in% input$postHocVars) {
           output$phTests <- renderPrint({
-          uniPostHocCalc(input$eva, col1, col2, col3)
-      })
-      } else if (input$rank_list_3[1] %in% input$postHocVars) {
-        output$phTests <- renderPrint({
-          postHocCalc(input$eva, col1, col2, 0.95)
-        })
-      } else if (input$rank_list_3[2] %in% input$postHocVars) {
-        output$phTests <- renderPrint({
-          postHocCalc(input$eva, col1, col3, 0.95)
-        })
-      }
-      
+            uniPostHocCalc(input$eva, col1, col2, col3)
+          })
+        } else if (input$rank_list_3[1] %in% input$postHocVars) {
+          output$phTests <- renderPrint({
+            postHocCalc(input$eva, col1, col2, 0.95)
+          })
+        } else if (input$rank_list_3[2] %in% input$postHocVars) {
+          output$phTests <- renderPrint({
+            postHocCalc(input$eva, col1, col3, 0.95)
+          })
+        }
+        
       }
       
       # Calculate EM Means -----------------------------------------------------
@@ -222,32 +224,6 @@ univariateServer <- function(id, data) {
         })
       }
     })
-    
-    observeEvent(input$rank_list_3, {
-      updateSelectInput(session, "setestvar", choices = input$rank_list_3)
-      # NEED TO FIX IF USER WANTS FIRST OPTION (ALREADY SELECTED)
-    })
-    
-    observeEvent(input$seOK,
-        {
-            req(input$setest)
-            req(input$setestvar)
-            req(input$setestadj)
-            
-            for (var in input$rank_list_3) {
-              if (var != input$setestvar) {
-                not_selected = var
-              }
-            }
-          
-            
-            se_results <- test_simple_effects(data(), not_selected, input$rank_list_2, input$setestvar)
-           
-            
-            output$seResults <- renderPrint({
-              se_results
-            })
-        })
     
   })
   

@@ -1,5 +1,6 @@
 library(shiny)
 library(bslib)
+library(rstatix)
 
 # here is where I am importing all of my other files - there's a better way to do
 # this, I just haven't gotten it to work yet
@@ -10,6 +11,7 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/indSamplesT.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/pairedSamplesT.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneWayANOVA.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/univariate.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/repeatedMeasures.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
@@ -30,9 +32,9 @@ ui <- navbarPage(
                                     ".csv")),
                # Input: Checkbox if file has header ----
                # CURRENTLY NOT BEING USED
-               checkboxInput("header", "Header Row", TRUE), 
+               checkboxInput("header", "Header Row", TRUE)), 
               # Input: Check all categorical variables
-                checkboxGroupInput("factors", "Please check all categorical variables: ", character(0))),
+                #checkboxGroupInput("factors", "Please check all categorical variables: ", character(0))),
             # Main Panel for the data table ---------------
             mainPanel(
              DT::dataTableOutput("table1")
@@ -54,7 +56,7 @@ ui <- navbarPage(
              tabPanel("One Way ANOVA", fluidPage(oneWayAnovaUI("owanova"))),
              "General Linear Model",
              tabPanel("Univariate", fluidPage(univariateUI("uni"))),
-             tabPanel("Repeated Measures", "m"),
+             tabPanel("Repeated Measures", fluidPage(repeatedMeasuresUI("repm"))),
              "Regression",
              tabPanel("Linear", "lm")),
   navbarMenu("Graphs", "seven"),
@@ -84,9 +86,9 @@ server <- function(input, output, session) {
   })
   
   # Updates the checkboxGroupInput with all of the variable names
-  observeEvent(input$file1, {
-    updateCheckboxGroupInput(session, "factors", choices = find_vars(df()))
-  })
+  #observeEvent(input$file1, {
+    #updateCheckboxGroupInput(session, "factors", choices = find_vars(df()))
+  #})
   
   
   # will need to include a call to all of the server functions of my separate module
@@ -97,6 +99,7 @@ server <- function(input, output, session) {
   pairedSamplesTServer("pT", df)
   oneWayAnovaServer("owanova", df)
   univariateServer("uni", df)
+  repeatedMeasuresServer("repm", df)
 }
 
 shinyApp(ui = ui, server = server)
