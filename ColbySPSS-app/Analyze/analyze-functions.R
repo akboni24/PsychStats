@@ -34,7 +34,7 @@ find_vars <- function(data) {
 # ------------------------------------------------------------------------------
 extractCols <- function(vars, data) {
   stopifnot(is.data.frame(data))
-  data %>% select(vars)
+  data %>% subset(select=vars)
 }
 
 # Helper function - makeFactor() ----------------------------------------------
@@ -52,7 +52,7 @@ extractCols <- function(vars, data) {
 # Returns: Boolean
 # ------------------------------------------------------------------------------
 checkFactor <- function(var, data) {
-  col <- data %>% select(var)
+  col <- data %>% subset(select=var)
   is.factor(col)
 }
 
@@ -62,8 +62,8 @@ checkFactor <- function(var, data) {
 # Returns: Boolean
 # ------------------------------------------------------------------------------
 checkNumeric <- function(var, data) {
-  col <- data %>% select(var)
-  is.numeric(col)
+  col <- data %>% subset(select=var)
+  return(is.numeric(col))
 }
 
 # Statistics Modal Function ----------------------------------------------------
@@ -166,7 +166,11 @@ dispersion <- function(cols, func) {
     results <- append(results, maxs)
   }
   
-  # add S.E. mean
+  if ("S.E. Mean" %in% func) {
+    stderror <- function(x) sd(x)/sqrt(length(x))
+    se <- lapply(cols, stderror)
+    results <- append(results, se)
+  }
   
   results
   

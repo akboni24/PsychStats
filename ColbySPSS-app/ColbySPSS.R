@@ -12,6 +12,7 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/pairedSamplesT.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneWayANOVA.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/univariate.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/repeatedMeasures.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/regression.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
@@ -57,8 +58,9 @@ ui <- navbarPage(
              "General Linear Model",
              tabPanel("Univariate", fluidPage(univariateUI("uni"))),
              tabPanel("Repeated Measures", fluidPage(repeatedMeasuresUI("repm"))),
-             "Regression",
-             tabPanel("Linear", "lm")),
+             "Regression and Correlation",
+             tabPanel("Linear", fluidPage(regressionUI("linreg"))),
+             tabPanel("Bivariate Correlation", fluidPage(correlationUI("corr")))),
   navbarMenu("Graphs", "seven"),
 
 
@@ -100,6 +102,8 @@ server <- function(input, output, session) {
   oneWayAnovaServer("owanova", df)
   univariateServer("uni", df)
   repeatedMeasuresServer("repm", df)
+  regressionServer("linreg", df)
+  correlationServer("corr", df)
 }
 
 shinyApp(ui = ui, server = server)

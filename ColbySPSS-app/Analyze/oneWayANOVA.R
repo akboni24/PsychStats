@@ -92,12 +92,14 @@ oneWayAnovaServer <- function(id, data) {
     # Check that the variables are numeric and factor --------------------------
     observeEvent(input$rank_list_2, {
       num <- checkNumeric(input$rank_list_2, data())
-      shinyFeedback::feedbackWarning("rank_list_2", !num, text = "Please select a numeric variable")
+      shinyFeedback::feedbackWarning("rank_list_2", !num, text = 
+                                       "Please select a numeric variable")
     })
     
     observeEvent(input$rank_list_3, {
       factor <- checkFactor(input$rank_list_3, data())
-      shinyFeedback::feedbackWarning("rank_list_3", !factor, text = "Please select a categorical variable")
+      shinyFeedback::feedbackWarning("rank_list_3", !factor, text = "Please 
+                                     select a categorical variable")
       
     })
     

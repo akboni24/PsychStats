@@ -62,8 +62,8 @@ repeatedMeasuresUI <- function(id) {
         verbatimTextOutput(ns("emResults")),
         h3("Post Hoc Tests"),
         verbatimTextOutput(ns("phTests")),
-        h3("Plots"),
-        plotOutput(ns("plotResults"))
+        #h3("Plots"),
+        #plotOutput(ns("plotResults"))
       )
     )
   )
@@ -96,11 +96,6 @@ repeatedMeasuresServer <- function(id, data) {
           text = "Within Subjects Variables: ",
           labels = NULL,
           input_id = ns("rank_list_2")
-        ), 
-        add_rank_list(
-          text = "Between Subjects Factor(s): ",
-          labels = NULL,
-          input_id = ns("rank_list_3")
         ))
       
     })
@@ -119,7 +114,7 @@ repeatedMeasuresServer <- function(id, data) {
     
     # Show plot, post hoc, and options modals if selected ----------------------
     observeEvent(input$plots, {
-      showModal(uniPlotsModal(input, output, session, input$rank_list_3))
+      showModal(uniPlotsModal(input, output, session, input$ws))
     })
     
     observeEvent(input$continue, {
@@ -127,7 +122,7 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$posthoc, {
-      showModal(uniPostHocModal(input, output, session, input$rank_list_3))
+      showModal(uniPostHocModal(input, output, session, input$ws))
     }) 
     
     observeEvent(input$continue, {
@@ -143,7 +138,7 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$emmeans, {
-      showModal(uniEMModal(input, output, session, input$rank_list_3))
+      showModal(uniEMModal(input, output, session, input$ws))
     })
     
     observeEvent(input$continue, {
@@ -164,7 +159,7 @@ repeatedMeasuresServer <- function(id, data) {
       anovaResults <- anova_test(data=data_prepared, dv=dependent_var, wid=colnames(data())[1], within=within_var)
       
       output$results <- renderPrint({
-        return(get_anova_table(anovaResults))
+        return(anovaResults)
       })
       
       # Make plots -------------------------------------------------------------
@@ -186,7 +181,7 @@ repeatedMeasuresServer <- function(id, data) {
       # Calculate chosen statistics --------------------------------------------
       if (!is.null(input$stat)) {
         output$statsresults <- renderPrint({
-          anovaOptionsCalc(input$stat, col1 ~ col2 * col3, col1, col2, col3)
+          anovaOptionsCalc(input$stat, data_prepared$dependent_var ~ data_prepared$within_var, data_prepared$dependent_var, data_prepared$within_var)
         })
       }
       
@@ -195,32 +190,24 @@ repeatedMeasuresServer <- function(id, data) {
       if (input$es == TRUE) {
         options(es.use_symbols = TRUE)
         output$esResults <- renderTable({
-          return(etaSquared(lm(col1 ~ col2 + col3 + col2:col3)))
+          return(etaSquared(lm(data_prepared$dependent_var ~ data_prepared$within_var)))
         })
       }
       
       # Conduct Post Hoc Tests -------------------------------------------------
       if (!is.null(input$eva)) {
-        if (input$rank_list_3[1] %in% input$postHocVars && input$rank_list_3[2] %in% input$postHocVars) {
+        
           output$phTests <- renderPrint({
-            uniPostHocCalc(input$eva, col1, col2, col3)
+            postHocCalc(input$eva, data_prepared$dependent_var, data_prepared$within_var)
           })
-        } else if (input$rank_list_3[1] %in% input$postHocVars) {
-          output$phTests <- renderPrint({
-            postHocCalc(input$eva, col1, col2, 0.95)
-          })
-        } else if (input$rank_list_3[2] %in% input$postHocVars) {
-          output$phTests <- renderPrint({
-            postHocCalc(input$eva, col1, col3, 0.95)
-          })
-        }
+       
         
       }
       
       # Calculate EM Means -----------------------------------------------------
       if (!is.null(input$EMVars)) {
         output$emResults <- renderPrint({
-          uniEMCalc(input$EMVars, input$ciadj, lm(col1 ~ col2 + col3 + col2:col3), col2, col3)
+          uniEMCalc(input$EMVars, input$ciadj, lm(data_prepared$dependent_var ~ data_prepared$within_var), data_prepared$within_var)
         })
       }
     })

@@ -9,6 +9,7 @@ descriptivesUI <- function(id) {
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
     
+    shinyFeedback::useShinyFeedback(),
     titlePanel("Descriptives"),
     
     # Creates two drag and drop buckets
@@ -16,6 +17,7 @@ descriptivesUI <- function(id) {
       column (
         width = 8,
         uiOutput(ns("sortable"))),
+        textOutput(ns("numeric")),
       column(
         # Buttons
         width = 4,
@@ -76,9 +78,14 @@ descriptivesServer <- function(id, data) {
     })
     
     observeEvent(input$rank_list_2, {
-      num <- checkNumeric(input$rank_list_2, data())
-      shinyFeedback::feedbackWarning("rank_list_2", !num, text = "Please select a numeric variable")
+      
+      req(input$rank_list_2)
+      if (checkNumeric(input$rank_list_2, data()) == FALSE) {
+        output$numeric <- renderPrint({data() %>% subset(select=input$rank_list_2) %>% class()})
+      }
+      
     })
+  
     
     observeEvent(input$options, {
       showModal(descOptionsModal(input, output, session))
@@ -103,7 +110,7 @@ descriptivesServer <- function(id, data) {
       }
       
       # Dispersion -------------------------------------------------------------
-      disp_result <- NULL
+      disp_results <- NULL
       if (!is.null(input$disp)) {
         disp_results <- dispersion(cols, input$disp)
       }
@@ -111,6 +118,7 @@ descriptivesServer <- function(id, data) {
       # Come back to this, make the output an R Markdown file
       # Should store results as a dictionary of the function/variable and the result
       output$results <- renderPrint({descriptives})
+      
       if (!is.null(centen_results)) {
         output$centResults <- renderPrint({centen_results})
       }
