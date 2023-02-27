@@ -47,14 +47,14 @@ correlationUI <- function(id) {
         verbatimTextOutput(ns("descr")),
         h3("Correlations"),
         verbatimTextOutput(ns("corr")),
-        h3("Statistics"),
-        verbatimTextOutput(ns("stats"))
+        h3("Covariances"),
+        verbatimTextOutput(ns("cov"))
       )
     )
   )
 }
 
-regressionServer <- function(id, data) {
+correlationServer <- function(id, data) {
   
   stopifnot(is.reactive(data))
   vars <- NULL
@@ -85,7 +85,7 @@ regressionServer <- function(id, data) {
     
     # Show options modal if selected -----------------------------
     observeEvent(input$options, {
-      showModal(lrOptionsModal(input, output, session))
+      showModal(corrOptionsModal(input, output, session))
     })
     
     observeEvent(input$submit, {
@@ -109,40 +109,18 @@ regressionServer <- function(id, data) {
         results
       })
       
-      if ("Descriptives" %in% input$other) {
+      if ("Means and standard deviations" %in% input$stats) {
         output$descr <- renderPrint({
-          summary(d)
+          sapply(d, means_and_sd)
         })
       }
       
-      if ("Part and partial correlations" %in% input$other) {
-        output$corr <- renderPrint ({
-          pcor(d)
+      if ("Covariances" %in% input$stats) {
+        output$cov <- renderPrint ({
+          cov(d)
         })
       }
-      
-      stats_results <- list()
-      if ("Confidence Intervals (95%)" %in% input$regcoef) {
-        stats_results <- append(stats_results, "Confidence Intervals")
-        stats_results <- append(stats_results, confint(model))
-      }
-      
-      if ("Covariance Matrix" %in% input$regcoef) {
-        stats_results <- append(stats_results, "Covariance Matrix")
-        stats_results <- append(stats_results, cov(d))
-      }
-      
-      if ("Collinearity diagnostics" %in% input$regcoef) {
-        stats_results <- append(stats_results, "Collinearity Diagnostics")
-        stats_results <- append(stats_results, vif(model))
-      }
-      
-      
-      output$stats <- renderPrint ({
-        stats_results
-      })
-      
-      
+
       
       
       

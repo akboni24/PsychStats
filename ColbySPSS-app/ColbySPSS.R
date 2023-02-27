@@ -13,6 +13,7 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneWayANOVA.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/univariate.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/repeatedMeasures.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/regression.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/correlation.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
