@@ -16,8 +16,10 @@ anovaPostHocModal <- function(input, output, session) {
   ns <- session$ns
   modalDialog (
     title = "ANOVA: Post Hoc Multiple Comparisons",
-    checkboxGroupInput(ns("eva"), label = "Equal Variances Assumed", c("LSD", "Bonferroni", "Tukey's HSD")),
-    footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), "Continue"))
+    checkboxGroupInput(ns("eva"), label = "Equal Variances Assumed", 
+                       c("LSD", "Bonferroni", "Tukey's HSD")),
+    footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), 
+                                                         "Continue"))
   )
 }
 
@@ -30,11 +32,15 @@ anovaOptionsModal <- function(input, output, session) {
   ns <- session$ns
   modalDialog (
     title = "ANOVA: Options",
-    checkboxGroupInput(ns("stat"), label = "Statistics", c("Descriptives", "Homogeneity of variance test", "Welch test")),
+    checkboxGroupInput(ns("stat"), label = "Statistics", c("Descriptives", 
+                                "Homogeneity of variance test", "Welch test")),
     radioButtons(ns("mv"), label = "Missing Values", 
-                 choices = list("Exclude cases analysis by analysis" = 1, "Exclude cases listwise" = 2), selected = 1),
-    numericInput(ns("confint"), label = "Confidence Intervals (Level%)", value = "0.95"),
-    footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), "Continue"))
+                 choices = list("Exclude cases analysis by analysis" = 1, 
+                                "Exclude cases listwise" = 2), selected = 1),
+    numericInput(ns("confint"), label = "Confidence Intervals (Level%)", 
+                                                                value = "0.95"),
+    footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), 
+                                                                    "Continue"))
   )
 }
 
@@ -80,7 +86,8 @@ anovaOptionsCalc <- function(tests, formula, var1, var2, var3 = NULL) {
 
 # Plot Modal for Univariate Page -----------------------------------------------
 # Pop-up window for making plots for two-way ANOVA
-# Arguments: Shiny arguments (input, output, session) and vars (list of variables to display)
+# Arguments: Shiny arguments (input, output, session) and vars 
+# (list of variables to display)
 # ------------------------------------------------------------------------------
 uniPlotsModal <- function(input, output, session, vars) {
   ns <- session$ns
@@ -106,22 +113,27 @@ uniPlotsModal <- function(input, output, session, vars) {
           input_id = ns("plotSepLines")
         ))),
     fluidRow(
-      radioButtons(ns("type"), label="Chart Type", choices = c("Line Chart", "Bar Chart"))),
+      radioButtons(ns("type"), label="Chart Type", choices = c("Line Chart", 
+                                                               "Bar Chart"))),
     fluidRow(
       checkboxInput(ns("errorBars"), "Include Error bars"),
-      radioButtons(ns("ebOptions"), label=NULL, c("Confidence Interval (95.0%)", "Standard Error"))),
-    footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"), "Continue"))
+      radioButtons(ns("ebOptions"), label=NULL, c("Confidence Interval (95.0%)", 
+                                                  "Standard Error"))),
+    footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"),
+                                                                 "Continue"))
   )
 }
 
 # Plotting function for Univariate Page ----------------------------------------
 # Creates a two-way interaction plot
-# Arguments: df (dataframe), x (variable on x-axis), group (variable for separate lines), dep (dependent variable),
+# Arguments: df (dataframe), x (variable on x-axis), group 
+# (variable for separate lines), dep (dependent variable),
 # type (type of plot), and eb (Error bars: either "None", "Confint", or "SE)
 # ------------------------------------------------------------------------------
 uniMakePlot <- function(df, x, group, dep, type = "Line Chart", errorBars) {
   if ("Bar Chart" %in% type) {
-    return(ggbarplot(df, x, dep, fill = group, color = group, palette = "Paired", label = TRUE, position = position_dodge(0.9), add = errorBars))
+    return(ggbarplot(df, x, dep, fill = group, color = group, palette = "Paired", 
+                label = TRUE, position = position_dodge(0.9), add = errorBars))
   } else {
     return(ggline(df, x, y = dep, color = group, add = errorBars))
   }
@@ -148,14 +160,17 @@ uniPostHocModal <- function(input, output, session, factors) {
         labels = NULL,
         input_id = ns("postHocVars")
       )),
-    checkboxGroupInput(ns("eva"), label = "Equal Variances Assumed", c("LSD", "Bonferroni", "Tukey's HSD")),
-    footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"), "Continue"))
+    checkboxGroupInput(ns("eva"), label = "Equal Variances Assumed", 
+                       c("LSD", "Bonferroni", "Tukey's HSD")),
+    footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"),
+                                                                 "Continue"))
   )
 }
 
 # Post Hoc Calculations for Two Way ANOVA --------------------------------------
 # Calculates post hoc tests for a two way anova
-# Arguments: tests (list of tests), y (dependent variable), vars (factors for the anova), and anova (anova object)
+# Arguments: tests (list of tests), y (dependent variable), 
+# vars (factors for the anova), and anova (anova object)
 # ------------------------------------------------------------------------------
 uniPostHocCalc <- function(tests, y, factor1, factor2) {
   
@@ -175,7 +190,8 @@ uniPostHocCalc <- function(tests, y, factor1, factor2) {
 
 # EM Means Modal for Two Way ANOVA ---------------------------------------------
 # Pop-up window that shows options for calculating estimated marginal means
-# Arguments: Shiny args (input, output, session) and factors (list of factors in the ANOVA)
+# Arguments: Shiny args (input, output, session) and factors 
+# (list of factors in the ANOVA)
 # ------------------------------------------------------------------------------
 uniEMModal <- function(input, output, session, factors) {
   ns <- session$ns
@@ -196,9 +212,12 @@ uniEMModal <- function(input, output, session, factors) {
         labels = NULL,
         input_id = ns("EMVars")
       )),
-    checkboxGroupInput(ns("cme"), label = NULL, c("Compare main effects", "Compare simple main effects")),
-    selectInput(ns("ciadj"), label = "Confidence interval adjustment", choices = c("LSD(none)" = 1, "Bonferroni" = 2), selected = 1),
-    footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"), "Continue"))
+    checkboxGroupInput(ns("cme"), label = NULL, c("Compare main effects", 
+                                                "Compare simple main effects")),
+    selectInput(ns("ciadj"), label = "Confidence interval adjustment", 
+                choices = c("LSD(none)" = 1, "Bonferroni" = 2), selected = 1),
+    footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"), 
+                                                                 "Continue"))
   )
 }
 

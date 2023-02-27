@@ -35,8 +35,7 @@ ui <- navbarPage(
                # Input: Checkbox if file has header ----
                # CURRENTLY NOT BEING USED
                checkboxInput("header", "Header Row", TRUE)), 
-              # Input: Check all categorical variables
-                #checkboxGroupInput("factors", "Please check all categorical variables: ", character(0))),
+              
             # Main Panel for the data table ---------------
             mainPanel(
              DT::dataTableOutput("table1")
@@ -62,7 +61,9 @@ ui <- navbarPage(
              "Regression and Correlation",
              tabPanel("Linear", fluidPage(regressionUI("linreg"))),
              tabPanel("Bivariate Correlation", fluidPage(correlationUI("corr")))),
-  navbarMenu("Graphs", "seven"),
+  navbarMenu("Graphs", 
+             "Legacy Dialogs",
+             tabPanel("Simple Scatter", fluidPage(scatterUI("scat")))),
 
 
 )

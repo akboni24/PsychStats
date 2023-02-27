@@ -19,17 +19,21 @@ lrStatsModal <- function(input, output, session) {
     fluidRow( 
     column(
       width = 6, 
-      checkboxGroupInput(ns("regcoef"), label = "Regression Coefficients", c("Estimates", "Confidence Intervals (95%)", "Covariance matrix"), selected="Estimates")
+      checkboxGroupInput(ns("regcoef"), label = "Regression Coefficients", 
+                         c("Estimates", "Confidence Intervals (95%)", 
+                           "Covariance matrix"), selected="Estimates")
     ), column(
       width = 6,
-      checkboxGroupInput(ns("other"), label = NULL, c("Descriptives", "Part and partial correlations", "Collinearity diagnostics")),
+      checkboxGroupInput(ns("other"), label = NULL, c("Descriptives", 
+                  "Part and partial correlations", "Collinearity diagnostics")),
     )
     ),
     fluidRow(
       column(
         width = 12,
         # should i get rid of this?
-        checkboxGroupInput(ns("resid"), label = "Residuals", c("Durbin-Watson", "Casewise Diagnostics"))
+        checkboxGroupInput(ns("resid"), label = "Residuals", 
+                           c("Durbin-Watson", "Casewise Diagnostics"))
       )
     ),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
@@ -49,7 +53,8 @@ corrOptionsModal <- function(input, output, session) {
     fluidRow( 
       column(
         width = 10, 
-        checkboxGroupInput(ns("stats"), label = "Statistics", c("Means and standard deviations", "Covariances"))
+        checkboxGroupInput(ns("stats"), label = "Statistics", 
+                           c("Means and standard deviations", "Covariances"))
       )),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
   )
