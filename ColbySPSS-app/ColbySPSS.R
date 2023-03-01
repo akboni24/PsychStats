@@ -14,6 +14,7 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/univariate.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/repeatedMeasures.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/regression.R")
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/correlation.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Graphs/scatter.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
@@ -106,6 +107,7 @@ server <- function(input, output, session) {
   repeatedMeasuresServer("repm", df)
   regressionServer("linreg", df)
   correlationServer("corr", df)
+  scatterServer("scat", df)
 }
 
 shinyApp(ui = ui, server = server)

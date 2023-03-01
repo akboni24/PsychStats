@@ -18,20 +18,5 @@ scatterTitlesModal <- function(input, output, session) {
   )
 }
 
-# Titles Modal for ANOVA ------------------------------------------------------
-# Creates a modal (pop-up window) for optional titles to be added to the plot
-# Arguments: Shiny arguments input, output, and session
-# ------------------------------------------------------------------------------
-scatterOptionsModal <- function(input, output, session) {
-  ns <- session$ns
-  modalDialog (
-    title = "Simple Scatter: Options",
-    checkboxInput(ns("errorBars"), "Include Error bars"),
-    radioButtons(ns("ebOptions"), label="Error Bars Represent", 
-                 c("Confidence Interval (95.0%)", "Standard Error", 
-                   "Standard Deviation")),
-    numericInput(ns("lvl"), label="Level (%) or Multiplier", value = 0.95),
-    footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), 
-                                                         "Continue"))
-  )
-}
+# Not including Options modal bc it just deals with error bars and we
+# don't use those in 214...
