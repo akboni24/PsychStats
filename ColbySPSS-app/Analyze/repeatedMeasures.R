@@ -2,6 +2,7 @@ library(shiny)
 library(sortable)
 library(effectsize)
 library(DescTools)
+library(afex)
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/anova-functions.R")
 # User Interface ---------------------------------------------------------------
 repeatedMeasuresUI <- function(id) {
@@ -62,8 +63,8 @@ repeatedMeasuresUI <- function(id) {
         verbatimTextOutput(ns("emResults")),
         h3("Post Hoc Tests"),
         verbatimTextOutput(ns("phTests")),
-        #h3("Plots"),
-        #plotOutput(ns("plotResults"))
+        h3("Plots"),
+        plotOutput(ns("plotResults"))
       )
     )
   )
@@ -93,9 +94,14 @@ repeatedMeasuresServer <- function(id, data) {
           labels = vars(),
           input_id = ns("rank_list_1")),
         add_rank_list(
-          text = "Within Subjects Variables: ",
+          text = "Within-Subjects Variable Levels: ",
           labels = NULL,
           input_id = ns("rank_list_2")
+        ),
+        add_rank_list(
+          text = "Between-Subjects Factor(s): ",
+          labels = NULL,
+          input_id = ns("rank_list_3")
         ))
       
     })
@@ -113,8 +119,9 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     # Show plot, post hoc, and options modals if selected ----------------------
+    
     observeEvent(input$plots, {
-      showModal(uniPlotsModal(input, output, session, input$ws))
+      showModal(uniPlotsModal(input, output, session, c(input$ws, input$rank_list_3)))
     })
     
     observeEvent(input$continue, {
@@ -122,7 +129,7 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$posthoc, {
-      showModal(uniPostHocModal(input, output, session, input$ws))
+      showModal(uniPostHocModal(input, output, session, c(input$ws, input$rank_list_3)))
     }) 
     
     observeEvent(input$continue, {
@@ -138,7 +145,7 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$emmeans, {
-      showModal(uniEMModal(input, output, session, input$ws))
+      showModal(uniEMModal(input, output, session, c(input$ws, input$rank_list_3)))
     })
     
     observeEvent(input$continue, {
@@ -149,14 +156,18 @@ repeatedMeasuresServer <- function(id, data) {
     observeEvent(input$ok, {
       
       # Calculate the ANOVA and display the results in a table -----------------
-      data_prepared <- data() %>%
-                        gather(key="within_var", value="dependent_var", input$rank_list_2) %>%
-                        convert_as_factor(within_var)
       
-      #dep_col <- data() %>% pull(input$rank_list_2)
-      #col2 <- as.factor(data() %>% pull(input$rank_list_3[1]))
-      #col3 <- as.factor(data() %>% pull(input$rank_list_3[2]))
-      anovaResults <- anova_test(data=data_prepared, dv=dependent_var, wid=colnames(data())[1], within=within_var)
+      data_prepared <- data() %>%
+                       gather(key="within_var", value="dependent_var", input$rank_list_2) %>%
+                       convert_as_factor(within_var)
+      
+      
+      # converting subjectID's to a factor
+      between_var <- as.factor(data_prepared %>% pull(input$rank_list_3))
+     
+      anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
+                             between = c(input$rank_list_3), within = c("within_var"), 
+                              data=data_prepared, print.formula=TRUE)
       
       output$results <- renderPrint({
         return(anovaResults)
@@ -172,33 +183,57 @@ repeatedMeasuresServer <- function(id, data) {
       } else {
         errorBars <- "none"
       }
+      
+      within_var <- data_prepared %>% pull("within_var")
+      all_vars <- append(within_var, between_var)
+      
       if (!is.null(input$plotXAxis)) {
         output$plotResults <- renderPlot({
-          uniMakePlot(data(), input$plotXAxis, input$plotSepLines, input$rank_list_2, input$type, errorBars)
+          uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, all_vars, input$type, errorBars)
         })
       }
       
       # Calculate chosen statistics --------------------------------------------
       if (!is.null(input$stat)) {
-        output$statsresults <- renderPrint({
-          anovaOptionsCalc(input$stat, data_prepared$dependent_var ~ data_prepared$within_var, data_prepared$dependent_var, data_prepared$within_var)
-        })
+        if (is.null(input$rank_list_3)) {
+          output$statsresults <- renderPrint({
+            anovaOptionsCalc(input$stat, data_prepared$dependent_var ~ data_prepared$within_var, 
+                             data_prepared$dependent_var, data_prepared$within_var)
+          })
+          } else {
+            output$statsresults <- renderPrint({
+              anovaOptionsCalc(input$stat, data_prepared$dependent_var ~ data_prepared$within_var +
+                                 between_var + data_prepared$within_var:between_var, 
+                               data_prepared$dependent_var, data_prepared$within_var,
+                               between_var)
+            })
+        }
+        
+        
       }
       
       # Calculate effect sizes -------------------------------------------------
       esResults <- list()
       if (input$es == TRUE) {
         options(es.use_symbols = TRUE)
+        if (is.null(input$rank_list_3)) {
         output$esResults <- renderTable({
           return(etaSquared(lm(data_prepared$dependent_var ~ data_prepared$within_var)))
         })
+        } else {
+          output$esResults <- renderTable({
+            return(etaSquared(lm(data_prepared$dependent_var ~ data_prepared$within_var +
+                                   between_var + data_prepared$within_var:between_var)))
+          })
+        }
       }
       
       # Conduct Post Hoc Tests -------------------------------------------------
       if (!is.null(input$eva)) {
         
           output$phTests <- renderPrint({
-            postHocCalc(input$eva, data_prepared$dependent_var, data_prepared$within_var)
+            postHocCalc(input$eva, data_prepared$dependent_var, data_prepared$within_var,
+                        between_var)
           })
        
         
@@ -206,9 +241,20 @@ repeatedMeasuresServer <- function(id, data) {
       
       # Calculate EM Means -----------------------------------------------------
       if (!is.null(input$EMVars)) {
-        output$emResults <- renderPrint({
-          uniEMCalc(input$EMVars, input$ciadj, lm(data_prepared$dependent_var ~ data_prepared$within_var), data_prepared$within_var)
-        })
+        if (is.null(input$rank_list_3)) {
+          output$emResults <- renderPrint({
+            uniEMCalc(input$EMVars, input$ciadj, lm(data_prepared$dependent_var ~ data_prepared$within_var), 
+                      data_prepared$within_var)
+          })
+        } else {
+          output$emResults <- renderPrint({
+            uniEMCalc(input$EMVars, input$ciadj, 
+                      lm(data_prepared$dependent_var ~ data_prepared$within_var +
+                      between_var + data_prepared$within_var:between_var), 
+                      data_prepared$within_var, between_var)
+          })
+        }
+        
       }
     })
     
