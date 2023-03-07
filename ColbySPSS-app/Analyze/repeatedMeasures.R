@@ -231,10 +231,17 @@ repeatedMeasuresServer <- function(id, data) {
       # Conduct Post Hoc Tests -------------------------------------------------
       if (!is.null(input$eva)) {
         
+        if (is.null(input$rank_list_3)) {
           output$phTests <- renderPrint({
             postHocCalc(input$eva, data_prepared$dependent_var, data_prepared$within_var,
-                        between_var)
+                        0.95)
           })
+        } else {
+          output$phTests <- renderPrint({
+            test_simple_effects(data_prepared, data_prepared$dependent_var, data_prepared$within_var,
+                        0.95)
+          })
+        }
        
         
       }
