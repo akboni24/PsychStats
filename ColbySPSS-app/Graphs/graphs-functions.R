@@ -1,10 +1,10 @@
 # This file contains helper functions for the Graphs Menu
 
 # Titles Modal for Scatter -----------------------------------------------------
-# Creates a modal (pop-up window) for optional titles to be added to the plot
-# Arguments: Shiny arguments input, output, and session
-# ------------------------------------------------------------------------------
 scatterTitlesModal <- function(input, output, session) {
+  #' Creates a modal (pop-up window) for optional titles to be added to the plot
+  #' Arguments: Shiny arguments input, output, and session
+  # ----------------------------------------------------------------------------
   ns <- session$ns
   modalDialog (
     title = "Simple Scatter: Titles",

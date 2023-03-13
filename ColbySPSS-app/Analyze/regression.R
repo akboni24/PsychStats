@@ -41,6 +41,7 @@ regressionUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        span(textOutput(ns("errors")), style="color:red"),
         h3("Descriptives"),
         verbatimTextOutput(ns("descr")),
         h3("Correlations"),
@@ -108,63 +109,72 @@ regressionServer <- function(id, data) {
     # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
-      # Calculate the linear regression model ----------------------------------
-      x <- extractCols(input$rank_list_3, data())
-      y <- data() %>% pull(input$rank_list_2)
+      # Make sure selected dependent variable is numeric -----------------------
+      numeric <- check_condition(input$rank_list_2, data(), is.numeric)
       
-      d <- data.frame(y, x)
-      
-      if (input$method == "Stepwise") {
-        intercept_only <- lm(y ~ 1, data=data())
-        all <- lm(d)
-        model <- step(intercept_only, direction='forward', scope=formula(all))
-        toPrint <- list(model$anova, model$coefficients)
+      if (numeric == FALSE) {
+        output$errors <- renderText({errorText("categorical", "numeric")})
       } else {
-        model <- lm(d)
-        toPrint <- summary(model)
-      }
       
-    
-      output$linreg <- renderPrint({
-        toPrint
-      })
-      
-      if ("Descriptives" %in% input$other) {
-        output$descr <- renderPrint({
-          summary(d)
+        # Calculate the linear regression model ----------------------------------
+        x <- extractCols(input$rank_list_3, data())
+        y <- data() %>% pull(input$rank_list_2)
+        
+        d <- data.frame(y, x)
+        
+        if (input$method == "Stepwise") {
+          # Conduct forward stepwise procedure ---------------------------------
+          intercept_only <- lm(y ~ 1, data=data())
+          all <- lm(d)
+          model <- step(intercept_only, direction='forward', scope=formula(all))
+          toPrint <- list(model$anova, model$coefficients)
+        } else {
+          model <- lm(d)
+          toPrint <- summary(model)
+        }
+        
+        # Print results of regression ------------------------------------------
+        output$linreg <- renderPrint({
+          toPrint
         })
-      }
-      
-      if ("Part and partial correlations" %in% input$other) {
-        output$corr <- renderPrint ({
-          pcor(d)
+        
+        # Calculate and display descriptives -----------------------------------
+        if ("Descriptives" %in% input$other) {
+          output$descr <- renderPrint({
+            summary(d)
+          })
+        }
+        
+        # Calculate and display partial correlations ---------------------------
+        if ("Part and partial correlations" %in% input$other) {
+          output$corr <- renderPrint ({
+            pcor(d)
+          })
+        }
+        
+        # Calculate and display chose statistics -------------------------------
+        stats_results <- list()
+        if ("Confidence Intervals (95%)" %in% input$regcoef) {
+          stats_results <- append(stats_results, "Confidence Intervals")
+          stats_results <- append(stats_results, confint(model))
+        }
+        
+        if ("Covariance Matrix" %in% input$regcoef) {
+          stats_results <- append(stats_results, "Covariance Matrix")
+          stats_results <- append(stats_results, cov(d))
+        }
+        
+        if ("Collinearity diagnostics" %in% input$regcoef) {
+          stats_results <- append(stats_results, "Collinearity Diagnostics")
+          stats_results <- append(stats_results, vif(model))
+        }
+        
+        
+        output$stats <- renderPrint ({
+          stats_results
         })
+        
       }
-      
-      stats_results <- list()
-      if ("Confidence Intervals (95%)" %in% input$regcoef) {
-        stats_results <- append(stats_results, "Confidence Intervals")
-        stats_results <- append(stats_results, confint(model))
-      }
-      
-      if ("Covariance Matrix" %in% input$regcoef) {
-        stats_results <- append(stats_results, "Covariance Matrix")
-        stats_results <- append(stats_results, cov(d))
-      }
-      
-      if ("Collinearity diagnostics" %in% input$regcoef) {
-        stats_results <- append(stats_results, "Collinearity Diagnostics")
-        stats_results <- append(stats_results, vif(model))
-      }
-      
-      
-      output$stats <- renderPrint ({
-        stats_results
-      })
-      
-      
-      
-      
       
     })
     

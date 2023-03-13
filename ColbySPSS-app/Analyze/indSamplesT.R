@@ -39,6 +39,8 @@ indSamplesTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        span(textOutput(ns("errors")), style="color:red"),
+        textOutput(ns("warning")),
         h3("Two-Sample Statistics"),
         tableOutput(ns("descr")),
         h3("Two-Sample Test"),
@@ -84,18 +86,7 @@ indSamplesTServer <- function(id, data) {
         ))
       
     })
-   
-    
-    observeEvent(input$rank_list_2, {
-      num <- checkNumeric(input$rank_list_2, data())
-      shinyFeedback::feedbackWarning("rank_list_2", !num, text = "Please select a numeric variable")
-    })
-    
-    observeEvent(input$rank_list_3, {
-      factor <- checkFactor(input$rank_list_3, data())
-      shinyFeedback::feedbackWarning("rank_list_3", !factor, text = "Please select a categorical variable")
-
-    })
+  
     
     observeEvent(input$options, {
       showModal(ttestOptionsModal(input, output, session))
@@ -108,38 +99,52 @@ indSamplesTServer <- function(id, data) {
     # Wait for the user to hit submit
     observeEvent(input$ok, {
       
-      if(is.null(input$confint)) {
-        confint = 0.95
+      numeric <- check_condition(input$rank_list_2, data(), is.numeric)
+      factor <- check_condition(input$rank_list_3, data(), is.numeric)
+      
+      if (factor == TRUE) {
+        output$warning <- renderText({factor_warning(input$rank_list_3)})
+      }
+      
+      if (numeric == FALSE) {
+        output$errors <- renderText({errorText("categorical", "numeric")})
       } else {
-        confint = input$confint
-      }
-      
-      col <- data() %>% pull(input$rank_list_2)
-      grouping <- data() %>% pull(input$rank_list_3)
-      
-      output$descr <- renderTable({
-        indttestStats(col, grouping)
-      })
-      
-      if(input$es == TRUE) {
-        # Check this
-        output$esResults <- renderPrint({cohensD(col ~ grouping)})
-      }
-      
-      # Warning if there are more than two groups
-      if (nlevels(grouping) > 2) {
-        output$results <- renderText({paste("Grouping variable has more than 2 groups. Please select a different variable or conduct a One Way ANOVA.")})
-      } else{
-        results <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = TRUE)
-        results2 <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = FALSE)
-        # Come back to this, make the output an R Markdown file
-        # Should store results as a dictionary of the function/variable and the result
-        output$results <- renderPrint({results})
-        output$results2 <- renderPrint({results2})
         
+        if(is.null(input$confint)) {
+          confint = 0.95
+        } else {
+          confint = input$confint
+        }
+        
+        col <- data() %>% pull(input$rank_list_2)
+        grouping <- data() %>% pull(input$rank_list_3)
+        
+        
+        output$descr <- renderTable({
+          indttestStats(col, grouping)
+        })
+        
+        if(input$es == TRUE) {
+          # Check this
+          output$esResults <- renderPrint({cohensD(col ~ grouping)})
+        }
+        
+        # Warning if there are more than two groups
+        if (nlevels(grouping) > 2) {
+          output$results <- renderText({paste("Grouping variable has more than 2 groups. Please select a different variable or conduct a One Way ANOVA.")})
+        } else{
+          results <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = TRUE)
+          results2 <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = FALSE)
+          # Come back to this, make the output an R Markdown file
+          # Should store results as a dictionary of the function/variable and the result
+          output$results <- renderPrint({results})
+          output$results2 <- renderPrint({results2})
+          
+        }
+      
       }
-
     })
+      
     
   })
   

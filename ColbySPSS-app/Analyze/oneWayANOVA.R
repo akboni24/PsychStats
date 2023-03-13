@@ -43,6 +43,8 @@ oneWayAnovaUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        span(textOutput(ns("errors")), style="color:red"),
+        textOutput(ns("warning")),
         h3("Statistics"),
         verbatimTextOutput(ns("statsresults")),
         h3("ANOVA"),
@@ -88,21 +90,7 @@ oneWayAnovaServer <- function(id, data) {
         ))
       
     })
-    
-    # Check that the variables are numeric and factor --------------------------
-    observeEvent(input$rank_list_2, {
-      num <- checkNumeric(input$rank_list_2, data())
-      shinyFeedback::feedbackWarning("rank_list_2", !num, text = 
-                                       "Please select a numeric variable")
-    })
-    
-    observeEvent(input$rank_list_3, {
-      factor <- checkFactor(input$rank_list_3, data())
-      shinyFeedback::feedbackWarning("rank_list_3", !factor, text = "Please 
-                                     select a categorical variable")
-      
-    })
-    
+
     # Show post hoc and options modals if selected -----------------------------
     observeEvent(input$posthoc, {
       showModal(anovaPostHocModal(input, output, session))
@@ -123,42 +111,58 @@ oneWayAnovaServer <- function(id, data) {
     # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
-      # Calculate the ANOVA and display the results in a table -----------------
-      col1 <- data() %>% pull(input$rank_list_2)
-      col2 <- as.factor(data() %>% pull(input$rank_list_3))
-      anovaResults <- anova(lm(col1 ~ col2))
+      # Check that the user selected the right kinds of variables --------------
+      numeric <- check_condition(input$rank_list_2, data(), is.numeric)
+      factor <- check_condition(input$rank_list_3, data(), is.numeric)
       
-      output$results <- renderTable({
-        return(anovaResults)
-      })
-      
-      # Calculate chosen statistics --------------------------------------------
-      if (!is.null(input$stat)) {
-        output$statsresults <- renderPrint({
-          anovaOptionsCalc(input$stat, col1 ~ col2, col1, col2)
-        })
+      # Display warning if chosen factor variable is numeric -------------------
+      if (factor == TRUE) {
+        output$warning <- renderText({factor_warning(input$rank_list_3)})
       }
       
-      # Calculate effect sizes -------------------------------------------------
-      esResults <- list()
-      if (input$es == TRUE) {
-        options(es.use_symbols = TRUE)
-        output$esResults <- renderTable({
-          return(etaSquared(lm(col1 ~ col2)))
-        })
-      }
-      
-      # Calculate post hoc tests -----------------------------------------------
-      if(is.null(input$confint)) {
-        confint = 0.95
+      # Stop calculations and print error message if other variable is not numeric
+      if (numeric == FALSE) {
+        output$errors <- renderText({errorText("categorical", "numeric")})
       } else {
-        confint = input$confint
-      }
       
-      if (!is.null(input$eva)) {
-        output$phTests <- renderPrint({
-          postHocCalc(input$eva, col1, col2, confint)
+      
+        # Calculate the ANOVA and display the results in a table -----------------
+        col1 <- data() %>% pull(input$rank_list_2)
+        col2 <- as.factor(data() %>% pull(input$rank_list_3))
+        anovaResults <- anova(lm(col1 ~ col2))
+        
+        output$results <- renderTable({
+          return(anovaResults)
         })
+        
+        # Calculate chosen statistics --------------------------------------------
+        if (!is.null(input$stat)) {
+          output$statsresults <- renderPrint({
+            anovaOptionsCalc(input$stat, col1 ~ col2, col1, col2)
+          })
+        }
+        
+        # Calculate effect sizes -------------------------------------------------
+        esResults <- list()
+        if (input$es == TRUE) {
+          options(es.use_symbols = TRUE)
+          output$esResults <- renderTable({
+            return(etaSquared(lm(col1 ~ col2)))
+          })
+        }
+        
+        # Calculate post hoc tests -----------------------------------------------
+        if(is.null(input$confint)) {
+          confint = 0.95
+        } else {
+          confint = input$confint
+        }
+        
+        if (!is.null(input$eva)) {
+          output$phTests <- renderPrint({
+            postHocCalc(input$eva, col1, col2, confint)
+          })
+        }
       }
       
     })

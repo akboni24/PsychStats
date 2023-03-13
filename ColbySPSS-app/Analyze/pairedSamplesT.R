@@ -40,6 +40,7 @@ pairedSamplesTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        span(textOutput(ns("errors")), style="color:red"),
         h5("Paired-Samples Statistics"),
         tableOutput(ns("descr")),
         h5("Paired Samples Test"),
@@ -83,18 +84,8 @@ pairedSamplesTServer <- function(id, data) {
       
     })
     
-    
-    observeEvent(input$rank_list_2, {
-      num <- checkNumeric(input$rank_list_2, data())
-      shinyFeedback::feedbackWarning("rank_list_2", !num, text = "Please select a numeric variable")
-    })
-    
-    observeEvent(input$rank_list_3, {
-      num <- checkNumeric(input$rank_list_3, data())
-      shinyFeedback::feedbackWarning("rank_list_3", !num, text = "Please select a numeric variable")
-      
-    })
-    
+  
+    # Show options modal if selected -------------------------------------------
     observeEvent(input$options, {
       showModal(ttestOptionsModal(input, output, session))
     })
@@ -106,29 +97,43 @@ pairedSamplesTServer <- function(id, data) {
     # Wait for the user to hit submit
     observeEvent(input$ok, {
       
+      # Grab the confidence interval -------------------------------------------
       if(is.null(input$confint)) {
         confint = 0.95
       } else {
         confint = input$confint
       }
       
-      col1 <- data() %>% pull(input$rank_list_2)
-      col2 <- data() %>% pull(input$rank_list_3)
       
-      output$descr <- renderTable({
-        ttestStats(col1, col2)
-      })
+      # Check that each variable is numeric, if not, stop calc and print error -
+      numeric1 <- check_condition(input$rank_list_2, data(), is.numeric)
+      numeric2 <- check_condition(input$rank_list_3, data(), is.numeric)
+      if (numeric1 == FALSE | numeric2 == FALSE) {
+        output$errors <- renderText({errorText("categorical", "numeric")})
+      } else {
       
-      results <- t.test(col1, col2, paired = TRUE, conf.level = confint)
+        # Pull each variable from the dataset ----------------------------------
+        col1 <- data() %>% pull(input$rank_list_2)
+        col2 <- data() %>% pull(input$rank_list_3)
       
-      if(input$es == TRUE) {
-        # Check this
-        output$esResults <- renderPrint({cohensD(col1, col2)})
+        
+        # Make descriptives table ----------------------------------------------
+        output$descr <- renderTable({
+          ttestStats(col1, col2)
+        })
+        
+        # Calculate cohen's d --------------------------------------------------
+        if(input$es == TRUE) {
+          # Check this
+          output$esResults <- renderPrint({cohensD(col1, col2)})
+        }
+        
+        # Calculate t test and print results -----------------------------------
+        results <- t.test(col1, col2, paired = TRUE, conf.level = confint)
+        output$results <- renderPrint({results})
+        
+        
       }
-      
-      # Come back to this, make the output an R Markdown file
-      # Should store results as a dictionary of the function/variable and the result
-      output$results <- renderPrint({results})
       
       
     })

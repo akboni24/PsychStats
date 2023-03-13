@@ -8,10 +8,10 @@ library(ggpubr)
 # Regression Modals ------------------------------------------------------------
 
 # Lin Reg Stats Modal ----------------------------------------------------------
-# Creates a pop up window that asks the user what statistics they want calculated
-# Arguments: Shiny arguments input, output, and session
-# ------------------------------------------------------------------------------
 lrStatsModal <- function(input, output, session) {
+  #' Creates a pop up window that asks the user what statistics they want calculated
+  #' Arguments: Shiny arguments input, output, and session
+  # ------------------------------------------------------------------------------
   ns <- session$ns
   # need to add numeric input to change conf int level
   modalDialog(
@@ -42,10 +42,10 @@ lrStatsModal <- function(input, output, session) {
 }
 
 # Correlation Options Modal ----------------------------------------------------
-# Creates a pop up window that asks the user what statistics they want calculated
-# Arguments: Shiny arguments input, output, and session
-# ------------------------------------------------------------------------------
 corrOptionsModal <- function(input, output, session) {
+  #' Creates a pop up window that asks the user what statistics they want calculated
+  #' Arguments: Shiny arguments input, output, and session
+  # ------------------------------------------------------------------------------
   ns <- session$ns
   # need to add numeric input to change conf int level
   modalDialog(
@@ -63,5 +63,9 @@ corrOptionsModal <- function(input, output, session) {
 
 
 means_and_sd <- function(x) {
+  #' Simple function that returns character vector of both the mean and sd
+  #' of a given variable
+  #' Arguments: x (numeric variable)
+  #' Used for calculations of stats modal for correlations page
   c(mean = mean(x), sd = sd(x))
 }

@@ -8,10 +8,10 @@ oneSampleTUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    
+    shinyFeedback::useShinyFeedback(),
     titlePanel("One Sample T Test"),
     
-    # Creates two drag and drop buckets
+    # Creates two drag and drop buckets ----------------------------------------
     fluidRow(
       column (
         width = 8,
@@ -39,6 +39,7 @@ oneSampleTUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        span(textOutput(ns("errors")), style="color:red"),
         h5("One-Sample Statistics"),
         tableOutput(ns("descr")),
         h5("One-Sample Test"),
@@ -78,11 +79,7 @@ oneSampleTServer <- function(id, data) {
       
     })
     
-    observeEvent(input$rank_list_2, {
-      num <- checkNumeric(input$rank_list_2, data())
-      shinyFeedback::feedbackWarning("rank_list_2", !num, text = "Please select a numeric variable")
-    })
-    
+    # Show Options modal if selected -------------------------------------------
     observeEvent(input$options, {
       showModal(ttestOptionsModal(input, output, session))
     })
@@ -91,32 +88,43 @@ oneSampleTServer <- function(id, data) {
       removeModal()
     })
     
-    # Wait for the user to hit submit
+    # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
+      # Extract the variable from the data -------------------------------------
       cols <- data() %>% pull(input$rank_list_2)
       
-      output$descr <- renderTable({
-        ttestStats(data() %>% pull(input$rank_list_2))
-      })
+      # Check to see if the variable is numeric - if not, do not continue and 
+      # print an error message
+      numeric <- check_condition(input$rank_list_2, data(), is.numeric)
       
-      
-      if(is.null(input$confint)) {
-        confint = 0.95
+      if (numeric == FALSE) {
+        output$errors <- renderText({errorText("categorical", "numeric")})
+        
       } else {
-        confint = input$confint
+        output$descr <- renderTable({
+          ttestStats(cols)
+        })
+        
+        # Grab confidence interval ---------------------------------------------
+        if (is.null(input$confint)) {
+          confint = 0.95
+        } else {
+          confint = input$confint
+        }
+        
+        if(input$es == TRUE) {
+          # Check this
+          output$esResults <- renderPrint({cohensD(cols, input$testValue)})
+        }
+        
+        results <- t.test(cols, mu=input$testValue, alternative="two.sided", conf.level = confint)
+        
+        # Come back to this, make the output an R Markdown file
+        # Should store results as a dictionary of the function/variable and the result
+        output$results <- renderPrint({results})
       }
       
-      if(input$es == TRUE) {
-        # Check this
-        output$esResults <- renderPrint({cohensD(cols, input$testValue)})
-      }
-
-      results <- t.test(cols, mu=input$testValue, alternative="two.sided", conf.level = confint)
-      
-      # Come back to this, make the output an R Markdown file
-      # Should store results as a dictionary of the function/variable and the result
-      output$results <- renderPrint({results})
       
     })
     

@@ -5,12 +5,11 @@ library(sortable)
 library(ggpubr)
 library(emmeans)
 
-# Helper function - load_file() ------------------------------------------------
-# Loads the given csv file and turns it into a dataframe
-# Arguments: name (filename) and path (file path)
-# Returns: a dataframe object
-# ------------------------------------------------------------------------------
+# Helper function for main page ------------------------------------------------
 load_file <- function(name, path) {
+  #'Loads the given csv file and turns it into a dataframe
+  #' Arguments: name (filename) and path (file path)
+  #' Returns: a dataframe object
   ext <- tools::file_ext(name)
   switch(ext,
        csv = vroom::vroom(path, delim = ","),
@@ -18,24 +17,53 @@ load_file <- function(name, path) {
 }
 
 # Helper function - find_vars() ------------------------------------------------
-# Extracts the variable names from the given dataset
-# Arguments: data (a dataframe object)
-# Returns: a character vector of variable names
-# ------------------------------------------------------------------------------
 find_vars <- function(data) {
+  #'Extracts the variable names from the given dataset
+  #'Arguments: data (a dataframe object)
+  #'Returns: a character vector of variable names
   stopifnot(is.data.frame(data))
   names(data)
 }
 
 # Helper function - extractCols() ----------------------------------------------
-# Extract columns of data based on variable names selected
-# Arguments: vars (a list of variable names) and data (a dataframe)
-# Returns: a dataframe object
-# ------------------------------------------------------------------------------
-extractCols <- function(vars, data) {
+extractCols <- function(vars, data, func = NULL) {
+  #' Extract columns of data based on variable names selected
+  #' Arguments: vars (a list of variable names) and data (a dataframe)
+  #' Returns: a dataframe object
   stopifnot(is.data.frame(data))
-  data %>% subset(select=vars)
+  cols <- data %>% subset(select=vars)
 }
+
+# Helper function - extractCols() ----------------------------------------------
+check_condition <- function(var, data, func) {
+  #' Check a certain condition on a selected data variable
+  #' Arguments: var (str), data (dataframe), and func (str function name)
+  #' Returns: result of function (probably boolean)
+  col <- data %>% pull(var)
+  condition <- func(col)
+  return(condition)
+}
+
+
+# Helper function - errorText() ------------------------------------------------
+error_text <- function(wrong_var_type, right_var_type) {
+  #' Just creates error text string for when user selects wrong type of variable
+  #' Arguments: wrong_var_type (str), right_var_type (str)
+  #' Returns: str
+  error_text <- sprintf("You cannot conduct this type of statistical test on a %s 
+  variable. Please select a %s variable.", wrong_var_type, right_var_type)
+  return(error_text)
+}
+
+factor_warning <- function(var_name) {
+  #' Creates some warning text to make sure the user selected a factor
+  #' Arguments: var_name (str, name of variable selected as factor)
+  #' Returns: str
+  warning_text <- sprintf("Reminder: Make sure %s is a factor/categorical variable
+                          before interpreting the following results.", var_name)
+  return(warning_text)
+}
+
 
 # Helper function - makeFactor() ----------------------------------------------
 # Turns a give variable into a factor
@@ -66,11 +94,12 @@ checkNumeric <- function(var, data) {
   return(is.numeric(col))
 }
 
+
 # Statistics Modal Function ----------------------------------------------------
-# Creates a modal (pop-up window) that asks for user input of what stats they want to be calculated
-# Arguments: Shiny arguments input, output, and session
-# ------------------------------------------------------------------------------
 statsModal <- function(input, output, session) {
+  #' Creates a modal (pop-up window) that asks for user input of what stats they want to be calculated
+  #' Arguments: Shiny arguments input, output, and session
+  #' ---------------------------------------------------------------------------
   ns <- session$ns
   # Create the pop-up window
   modalDialog(
@@ -85,22 +114,21 @@ statsModal <- function(input, output, session) {
 }
 
 # Dispersion Function ----------------------------------------------------------
-# Creates a checkboxGroupInput for measures of dispersion
-# Arguments: input, output, session
-# ------------------------------------------------------------------------------
 disp <- function(session) {
+  #' Creates a checkboxGroupInput for measures of dispersion
+  #' Arguments: input, output, session
+  #' ---------------------------------------------------------------------------
   ns <- session$ns
-  checkboxGroupInput(ns("disp"), label = "Dispersion", c("Std. Deviation", "Variance", "Range", "Minimum", "Maximum", "S.E. Mean"))
+  checkboxGroupInput(ns("disp"), label = "Dispersion", 
+    c("Std. Deviation", "Variance", "Range", "Minimum", "Maximum", "S.E. Mean"))
 }
 
 
 # Helper function - centraltendency() ------------------------------------------
-# Calculates measures of central tendency on a group of variables
-# Arguments: cols (dataframe columns) and func (list of functions to calculate)
-# Returns: results, a list of the calculated values
-# TO ADD: MAKE RESULTS AN RMARKDOWN FILE INSTEAD
-# ------------------------------------------------------------------------------
 centraltendency <- function(cols, func) {
+  #' Calculates measures of central tendency on a group of variables
+  #' Arguments: cols (dataframe columns) and func (list of functions to calculate)
+  #' Returns: results, a list of the calculated values
   results <- list()
   # use lapply to apply each function selected to each variable chosen
   if ("Mean" %in% func) {
@@ -132,12 +160,12 @@ centraltendency <- function(cols, func) {
 }
 
 # Helper function - dispersion() -----------------------------------------------
-# Calculates measures of dispersion on a group of variables
-# Arguments: cols (dataframe columns) and func (list of functions to calculate)
-# Returns: results, a list of the calculated values
-# TO ADD: MAKE RESULTS AN RMARKDOWN FILE INSTEAD
-# ------------------------------------------------------------------------------
 dispersion <- function(cols, func) {
+  #' Calculates measures of dispersion on a group of variables
+  #' 
+  #' Arguments: cols (dataframe columns) and func (list of functions to calculate)
+  #' Returns: results, a list of the calculated values
+  #' ----------------------------------------------------------------------------
   results <- list()
   # use lapply to apply each function selected to each variable chosen
   if ("Std. Deviation" %in% func) {
@@ -177,10 +205,12 @@ dispersion <- function(cols, func) {
 }
 
 # Options Modal Function for Descriptives --------------------------------------
-# Creates a modal (pop-up window) that asks for user input of what stats they want to be calculated
-# Arguments: Shiny arguments input, output, and session
-# ------------------------------------------------------------------------------
 descOptionsModal <- function(input, output, session) {
+  #' Creates a modal (pop-up window) that asks for user input of what stats they
+  #' want to be calculated
+  #' 
+  #' Arguments: Shiny arguments input, output, and session
+  #' ---------------------------------------------------------------------------
   ns <- session$ns
   # Create the pop-up window
   modalDialog(
@@ -194,10 +224,11 @@ descOptionsModal <- function(input, output, session) {
 }
 
 # Options Modal Function for T Tests -------------------------------------------
-# Creates a modal (pop-up window) that asks for user input of confidence intervals
-# Arguments: Shiny arguments input, output, and session
-# ------------------------------------------------------------------------------
 ttestOptionsModal <- function(input, output, session) {
+  #' Creates a modal (pop-up window) that asks for user input of confidence intervals
+  #' 
+  #' Arguments: Shiny arguments input, output, and session
+  #' ---------------------------------------------------------------------------
   ns <- session$ns
   # Create the pop-up window
   modalDialog(
@@ -210,10 +241,11 @@ ttestOptionsModal <- function(input, output, session) {
 }
 
 # Statistic Calculations for T Tests -------------------------------------------
-# Calculates one and two sample statistics for t tests
-# Arguments: cols (columns of data)
-# ------------------------------------------------------------------------------
 ttestStats <- function(var1, var2 = NULL) {
+  #' Calculates one and two sample statistics for t tests
+  #' 
+  #' Arguments: cols (columns of data)
+  #' ---------------------------------------------------------------------------
   df <- data.frame( "Variable Name" = character(),
                     "N" = numeric(),
                    "Mean" = numeric(),
@@ -237,6 +269,10 @@ ttestStats <- function(var1, var2 = NULL) {
 
 
 indttestStats <- function(var1, var2) {
+  #' Calculates one and two sample statistics for t tests
+  #' 
+  #' Arguments: cols (columns of data)
+  #' ---------------------------------------------------------------------------
   df <- data.frame( "Variable Name" = character(),
                     "N" = numeric(),
                     "Mean" = numeric(),

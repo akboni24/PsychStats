@@ -77,12 +77,6 @@ freqServer <- function(id, data) {
     
   })
     
-    observeEvent(input$rank_list_2, {
-      factor <- checkFactor(input$rank_list_2, data())
-      shinyFeedback::feedbackWarning("rank_list_2", !factor, text = "Please select a categorical variable")
-    })
-
-    
     observeEvent(input$stat, {
       showModal(statsModal(input, output, session))
     })

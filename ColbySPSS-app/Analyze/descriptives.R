@@ -8,8 +8,7 @@ descriptivesUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    
-    shinyFeedback::useShinyFeedback(),
+
     titlePanel("Descriptives"),
     
     # Creates two drag and drop buckets
@@ -37,6 +36,7 @@ descriptivesUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        span(textOutput(ns("errors")), style="color:red"),
         h5("Descriptives"),
         verbatimTextOutput(ns("results")),
         h5("Central Tendency"),
@@ -77,16 +77,7 @@ descriptivesServer <- function(id, data) {
       
     })
     
-    observeEvent(input$rank_list_2, {
-      
-      req(input$rank_list_2)
-      if (checkNumeric(input$rank_list_2, data()) == FALSE) {
-        output$numeric <- renderPrint({data() %>% subset(select=input$rank_list_2) %>% class()})
-      }
-      
-    })
   
-    
     observeEvent(input$options, {
       showModal(descOptionsModal(input, output, session))
     })
@@ -98,32 +89,43 @@ descriptivesServer <- function(id, data) {
     # Wait for the user to hit submit
     observeEvent(input$ok, {
       
+      # Extract the columns of data
       cols <- extractCols(input$rank_list_2, data())
       
-      # Descriptives -----------------------------------------------------------
-      descriptives <- lapply(cols, summary)
+      # Check that each variable selected is a numeric variable - if not,
+      # do not continue and print an error message 
+      num <- lapply(input$rank_list_2, check_condition, data(), is.numeric)
+      if (FALSE %in% num) {
+        output$errors <- renderText({error_text("categorical", "numeric")})
+        
+      } else {
       
-      # Central Tendency -------------------------------------------------------
-      centen_results <- NULL
-      if (!is.null(input$desc)) {
-        centen_results <- centraltendency(cols, input$desc)
-      }
+        # Descriptives ---------------------------------------------------------
+        descriptives <- lapply(cols, summary)
+        
+        # Central Tendency -----------------------------------------------------
+        centen_results <- NULL
+        if (!is.null(input$desc)) {
+          centen_results <- centraltendency(cols, input$desc)
+        }
+        
+        # Dispersion -----------------------------------------------------------
+        disp_results <- NULL
+        if (!is.null(input$disp)) {
+          disp_results <- dispersion(cols, input$disp)
+        }
+        
+        # Come back to this, make the output an R Markdown file
+        # Should store results as a dictionary of the function/variable and the result
+        output$results <- renderPrint({descriptives})
+        
+        if (!is.null(centen_results)) {
+          output$centResults <- renderPrint({centen_results})
+        }
+        if (!is.null(disp_results)) {
+          output$dispResults <- renderPrint({disp_results})
+        }
       
-      # Dispersion -------------------------------------------------------------
-      disp_results <- NULL
-      if (!is.null(input$disp)) {
-        disp_results <- dispersion(cols, input$disp)
-      }
-      
-      # Come back to this, make the output an R Markdown file
-      # Should store results as a dictionary of the function/variable and the result
-      output$results <- renderPrint({descriptives})
-      
-      if (!is.null(centen_results)) {
-        output$centResults <- renderPrint({centen_results})
-      }
-      if (!is.null(disp_results)) {
-        output$dispResults <- renderPrint({disp_results})
       }
       
     })

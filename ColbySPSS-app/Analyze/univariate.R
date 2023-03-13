@@ -3,6 +3,7 @@ library(sortable)
 library(effectsize)
 library(DescTools)
 library(tidyr)
+library(lsmeans)
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/anova-functions.R")
 # User Interface ---------------------------------------------------------------
 univariateUI <- function(id) {
@@ -45,6 +46,8 @@ univariateUI <- function(id) {
     fluidRow (
       column (
         width = 12,
+        span(textOutput(ns("errors")), style="color:red"),
+        textOutput(ns("warning")),
         h3("Descriptive Statistics"),
         verbatimTextOutput(ns("statsresults")),
         h3("ANOVA"),
@@ -106,18 +109,6 @@ univariateServer <- function(id, data) {
     })
     
     
-    # Check that the variables are numeric and factor --------------------------
-    observeEvent(input$rank_list_2, {
-      num <- checkNumeric(input$rank_list_2, data())
-      shinyFeedback::feedbackWarning("rank_list_2", !num, text = "Please select a numeric variable")
-    })
-    
-    observeEvent(input$rank_list_3, {
-      factor <- checkFactor(input$rank_list_3, data())
-      shinyFeedback::feedbackWarning("rank_list_3", !factor, text = "Please select a categorical variable")
-      
-    })
-    
     # Show plot, post hoc, and options modals if selected ----------------------
     observeEvent(input$plots, {
       showModal(uniPlotsModal(input, output, session, input$rank_list_3))
@@ -155,99 +146,120 @@ univariateServer <- function(id, data) {
     # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
-      # Calculate the ANOVA and display the results in a table -----------------
-      col1 <- data() %>% pull(input$rank_list_2)
-      col2 <- as.factor(data() %>% pull(input$rank_list_3[1]))
-      col3 <- as.factor(data() %>% pull(input$rank_list_3[2]))
-      anovaResults <- aov(col1 ~ col2 + col3 + col2:col3)
+      # Check that the user selected the right kinds of variables --------------
+      numeric <- check_condition(input$rank_list_2, data(), is.numeric)
+      factor <- lapply(input$rank_list_3, check_condition, data(), is.numeric)
       
-      output$results <- renderPrint({
-        summary(anovaResults)
-      })
+      # Display warning if chosen factor variable is numeric -------------------
+      if (TRUE %in% factor) {
+        output$warning <- renderText({factor_warning("Fixed Factors")})
+      }
       
-      # Make plots -------------------------------------------------------------
-      if(!is.null(input$errorBars)) {
-        if(is.null(input$ebOptions)) {
-          errorBars <- "mean_ci"
-        } else {
-          errorBars <- "mean_se"
-        }
+      # Stop calculations and print error message if other variable is not numeric
+      if (numeric == FALSE) {
+        output$errors <- renderText({errorText("categorical", "numeric")})
       } else {
-        errorBars <- "none"
-      }
-      if (!is.null(input$plotXAxis)) {
-        output$plotResults <- renderPlot({
-          uniMakePlot(data(), input$plotXAxis, input$plotSepLines, input$rank_list_2, input$type, errorBars)
-        })
-      }
       
-      # Calculate chosen statistics --------------------------------------------
-      if (!is.null(input$stat)) {
-        output$statsresults <- renderPrint({
-          anovaOptionsCalc(input$stat, col1 ~ col2 * col3, col1, col2, col3)
+        # Calculate the ANOVA and display the results in a table -----------------
+        col1 <- data() %>% pull(input$rank_list_2)
+        col2 <- as.factor(data() %>% pull(input$rank_list_3[1]))
+        col3 <- as.factor(data() %>% pull(input$rank_list_3[2]))
+        anovaResults <- aov(col1 ~ col2 + col3 + col2:col3, data=data())
+        
+        output$results <- renderPrint({
+          summary(anovaResults)
         })
-      }
-      
-      # Calculate effect sizes -------------------------------------------------
-      esResults <- list()
-      if (input$es == TRUE) {
-        options(es.use_symbols = TRUE)
-        output$esResults <- renderTable({
-          return(etaSquared(lm(col1 ~ col2 + col3 + col2:col3)))
+        
+        # Make plots -------------------------------------------------------------
+        if(!is.null(input$errorBars)) {
+          if(is.null(input$ebOptions)) {
+            errorBars <- "mean_ci"
+          } else {
+            errorBars <- "mean_se"
+          }
+        } else {
+          errorBars <- "none"
+        }
+        if (!is.null(input$plotXAxis)) {
+          output$plotResults <- renderPlot({
+            uniMakePlot(data(), input$plotXAxis, input$plotSepLines, input$rank_list_2, input$type, errorBars)
+          })
+        }
+        
+        # Calculate chosen statistics --------------------------------------------
+        if (!is.null(input$stat)) {
+          output$statsresults <- renderPrint({
+            anovaOptionsCalc(input$stat, col1 ~ col2 * col3, col1, col2, col3)
+          })
+        }
+        
+        # Calculate effect sizes -------------------------------------------------
+        esResults <- list()
+        if (input$es == TRUE) {
+          options(es.use_symbols = TRUE)
+          output$esResults <- renderTable({
+            return(etaSquared(lm(col1 ~ col2 + col3 + col2:col3)))
+          })
+        }
+        
+        # Conduct Post Hoc Tests -------------------------------------------------
+        if (!is.null(input$eva)) {
+          if (input$rank_list_3[1] %in% input$postHocVars && input$rank_list_3[2] %in% input$postHocVars) {
+            output$phTests <- renderPrint({
+            uniPostHocCalc(input$eva, col1, col2, col3)
         })
-      }
-      
-      # Conduct Post Hoc Tests -------------------------------------------------
-      if (!is.null(input$eva)) {
-        if (input$rank_list_3[1] %in% input$postHocVars && input$rank_list_3[2] %in% input$postHocVars) {
+        } else if (input$rank_list_3[1] %in% input$postHocVars) {
           output$phTests <- renderPrint({
-          uniPostHocCalc(input$eva, col1, col2, col3)
-      })
-      } else if (input$rank_list_3[1] %in% input$postHocVars) {
-        output$phTests <- renderPrint({
-          postHocCalc(input$eva, col1, col2, 0.95)
-        })
-      } else if (input$rank_list_3[2] %in% input$postHocVars) {
-        output$phTests <- renderPrint({
-          postHocCalc(input$eva, col1, col3, 0.95)
-        })
-      }
+            postHocCalc(input$eva, col1, col2, 0.95)
+          })
+        } else if (input$rank_list_3[2] %in% input$postHocVars) {
+          output$phTests <- renderPrint({
+            postHocCalc(input$eva, col1, col3, 0.95)
+          })
+        }
+        
+        }
+        
+        # Calculate EM Means -----------------------------------------------------
+        if (!is.null(input$EMVars)) {
+          output$emResults <- renderPrint({
+            uniEMCalc(input$EMVars, input$ciadj, lm(col1 ~ col2 + col3 + col2:col3), col2, col3)
+          })
+        }
       
-      }
-      
-      # Calculate EM Means -----------------------------------------------------
-      if (!is.null(input$EMVars)) {
-        output$emResults <- renderPrint({
-          uniEMCalc(input$EMVars, input$ciadj, lm(col1 ~ col2 + col3 + col2:col3), col2, col3)
+        observeEvent(input$rank_list_3, {
+          updateSelectInput(session, "setestvar", choices = input$rank_list_3)
+          # NEED TO FIX IF USER WANTS FIRST OPTION (ALREADY SELECTED)
         })
-      }
-    })
-    
-    observeEvent(input$rank_list_3, {
-      updateSelectInput(session, "setestvar", choices = input$rank_list_3)
-      # NEED TO FIX IF USER WANTS FIRST OPTION (ALREADY SELECTED)
-    })
-    
-    observeEvent(input$seOK,
-        {
-            req(input$setest)
-            req(input$setestvar)
-            req(input$setestadj)
-            
-            for (var in input$rank_list_3) {
-              if (var != input$setestvar) {
-                not_selected = var
-              }
-            }
-          
-            
-            se_results <- test_simple_effects(data(), not_selected, input$rank_list_2, input$setestvar)
+        
+        observeEvent(input$seOK,
+         {
+           req(input$setest)
            
-            
-            output$seResults <- renderPrint({
-              se_results
-            })
-        })
+           aov_lm <- lm(col1 ~ col2 + col3 + col2:col3)
+           
+           if (is.null(input$setestvar)) {
+             lsm <- emmeans(aov_lm, ~ col3 | col2)
+           } else {
+             lsm <- emmeans(aov_lm, ~ col2 | col3)
+           }
+           
+           
+           
+           se_results <- test(contrast(lsm, "poly"), joint = TRUE)
+           #se_results <- test_simple_effects(data(), not_selected, input$rank_list_2, 
+           #sefactor)
+           
+           
+           output$seResults <- renderPrint({
+             se_results
+           })
+         })
+
+      }
+      })
+      
+      
     
   })
   
