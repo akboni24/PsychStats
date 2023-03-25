@@ -212,10 +212,9 @@ repeatedMeasuresServer <- function(id, data) {
             })
             } else {
               output$statsresults <- renderPrint({
-                anovaOptionsCalc(input$stat, data_prepared$dependent_var ~ data_prepared$within_var +
-                                   between_var + data_prepared$within_var:between_var, 
-                                 data_prepared$dependent_var, data_prepared$within_var,
-                                 between_var)
+                anovaOptionsCalc(input$stat, data_prepared$dependent_var ~ data_prepared$within_var *
+                                   between_var, data_prepared$dependent_var, 
+                                 data_prepared$within_var,between_var)
               })
           }
           
@@ -247,8 +246,8 @@ repeatedMeasuresServer <- function(id, data) {
             })
           } else {
             output$phTests <- renderPrint({
-              test_simple_effects(data_prepared, data_prepared$dependent_var, data_prepared$within_var,
-                          0.95)
+              test_simple_effects(data_prepared, names(data_prepared$dependent_var), 
+                                  names(data_prepared$within_var), 0.95)
             })
           }
          

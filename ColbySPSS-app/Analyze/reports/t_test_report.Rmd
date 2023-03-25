@@ -1,0 +1,26 @@
+---
+title: "One Sample T Test"
+author:
+  - name: Ainsley Bonin 
+date: "2023-3-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(shiny)
+library(dplyr)
+```
+
+## One Sample T Test
+
+### One-Sample Statistics
+
+### One-Sample Test
+
+```{r}
+1
+```
+
+### Effect Sizes
+

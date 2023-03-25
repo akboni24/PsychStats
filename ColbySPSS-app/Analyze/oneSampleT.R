@@ -1,5 +1,7 @@
 library(shiny)
 library(sortable)
+library(rmarkdown)
+library(knitr)
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
 oneSampleTUI <- function(id) {
@@ -45,7 +47,8 @@ oneSampleTUI <- function(id) {
         h5("One-Sample Test"),
         verbatimTextOutput(ns("results")),
         h5("Effect Sizes"),
-        verbatimTextOutput(ns("esResults"))
+        verbatimTextOutput(ns("esResults")),
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
     
@@ -92,7 +95,7 @@ oneSampleTServer <- function(id, data) {
     observeEvent(input$ok, {
       
       # Extract the variable from the data -------------------------------------
-      cols <- data() %>% pull(input$rank_list_2)
+      col <- data() %>% pull(input$rank_list_2)
       
       # Check to see if the variable is numeric - if not, do not continue and 
       # print an error message
@@ -102,8 +105,10 @@ oneSampleTServer <- function(id, data) {
         output$errors <- renderText({errorText("categorical", "numeric")})
         
       } else {
+        
+        descriptives <- ttestStats(col)
         output$descr <- renderTable({
-          ttestStats(cols)
+          descriptives
         })
         
         # Grab confidence interval ---------------------------------------------
@@ -115,10 +120,10 @@ oneSampleTServer <- function(id, data) {
         
         if(input$es == TRUE) {
           # Check this
-          output$esResults <- renderPrint({cohensD(cols, input$testValue)})
+          output$esResults <- renderPrint({cohensD(col, input$testValue)})
         }
-        
-        results <- t.test(cols, mu=input$testValue, alternative="two.sided", conf.level = confint)
+
+        results <- t.test(col, mu=input$testValue, alternative="two.sided", conf.level = confint)
         
         # Come back to this, make the output an R Markdown file
         # Should store results as a dictionary of the function/variable and the result
@@ -127,6 +132,17 @@ oneSampleTServer <- function(id, data) {
       
       
     })
+    
+    output$report <- downloadHandler(
+      filename <- "t_test_report.html",
+      content = function(file) {
+        tempReport <- file.path(tempdir(), "t_test_report.Rmd")
+        file.copy("t_test_report.Rmd", tempReport, overwrite = TRUE)
+        # params <- list(results = results)
+        rmarkdown::render(tempReport, output_file = file,
+                          envir = new.env(parent = globalenv()))
+      }
+    )
     
   })
   

@@ -1,6 +1,8 @@
 library(shiny)
 library(bslib)
 library(rstatix)
+library(rmarkdown)
+library(knitr)
 
 # here is where I am importing all of my other files - there's a better way to do
 # this, I just haven't gotten it to work yet
