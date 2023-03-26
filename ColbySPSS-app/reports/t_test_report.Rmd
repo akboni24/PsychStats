@@ -1,0 +1,36 @@
+---
+title: "One Sample T Test"
+output: pdf_document
+params:
+  descr: NA
+  results: NA
+  var: NA
+  test: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+library(shiny)
+library(dplyr)
+library(knitr)
+```
+
+## One Sample T Test
+
+### One-Sample Statistics
+
+```{r}
+kable(params$descr)
+```
+
+### One-Sample Test
+
+```{r}
+kable(params$results)
+```
+
+### Effect Sizes
+
+```{r}
+cohensD(params$var, params$test)
+```

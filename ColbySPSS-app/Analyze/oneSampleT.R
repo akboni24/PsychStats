@@ -2,7 +2,9 @@ library(shiny)
 library(sortable)
 library(rmarkdown)
 library(knitr)
+library(tidyverse)
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
+source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/reports/reports-functions.R")
 # User Interface ---------------------------------------------------------------
 oneSampleTUI <- function(id) {
   
@@ -123,26 +125,36 @@ oneSampleTServer <- function(id, data) {
           output$esResults <- renderPrint({cohensD(col, input$testValue)})
         }
 
-        results <- t.test(col, mu=input$testValue, alternative="two.sided", conf.level = confint)
+        results <- t.test(col, mu=input$testValue, alternative="two.sided", 
+                          conf.level = confint)
         
         # Come back to this, make the output an R Markdown file
         # Should store results as a dictionary of the function/variable and the result
         output$results <- renderPrint({results})
+        results_df <- tidy(results)
+        
+        # output$report <- downloadHandler(
+        #   filename <- "t_test_report.pdf",
+        #   content = function(file) {
+        #     tempReport <- file.path(tempdir(), "t_test_report.Rmd")
+        #     file.copy("reports/t_test_report.Rmd", tempReport, overwrite = TRUE)
+        #     params <- list(descr = descriptives, results = results_df, var = col,
+        #                    test = input$testValue)
+        #     rmarkdown::render(tempReport, output_file = file, params = params,
+        #                       envir = new.env(parent = globalenv()))
+        #   }
+        # )
+        
+        params <- list(descr = descriptives, results = results_df, var = col,
+                                           test = input$testValue)
+        
+        output$report <- generate_report("t_test_report", params)
       }
       
       
     })
+  
     
-    output$report <- downloadHandler(
-      filename <- "t_test_report.html",
-      content = function(file) {
-        tempReport <- file.path(tempdir(), "t_test_report.Rmd")
-        file.copy("t_test_report.Rmd", tempReport, overwrite = TRUE)
-        # params <- list(results = results)
-        rmarkdown::render(tempReport, output_file = file,
-                          envir = new.env(parent = globalenv()))
-      }
-    )
     
   })
   
