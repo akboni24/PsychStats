@@ -128,22 +128,9 @@ oneSampleTServer <- function(id, data) {
         results <- t.test(col, mu=input$testValue, alternative="two.sided", 
                           conf.level = confint)
         
-        # Come back to this, make the output an R Markdown file
-        # Should store results as a dictionary of the function/variable and the result
+       
         output$results <- renderPrint({results})
         results_df <- tidy(results)
-        
-        # output$report <- downloadHandler(
-        #   filename <- "t_test_report.pdf",
-        #   content = function(file) {
-        #     tempReport <- file.path(tempdir(), "t_test_report.Rmd")
-        #     file.copy("reports/t_test_report.Rmd", tempReport, overwrite = TRUE)
-        #     params <- list(descr = descriptives, results = results_df, var = col,
-        #                    test = input$testValue)
-        #     rmarkdown::render(tempReport, output_file = file, params = params,
-        #                       envir = new.env(parent = globalenv()))
-        #   }
-        # )
         
         params <- list(descr = descriptives, results = results_df, var = col,
                                            test = input$testValue)

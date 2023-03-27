@@ -1,0 +1,48 @@
+---
+title: "Independent Samples T Test"
+output: pdf_document
+params:
+  descr: NA
+  results1: NA
+  results2: NA
+  cohens: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+library(shiny)
+library(dplyr)
+library(knitr)
+library(rempsyc)
+library(flextable)
+set_flextable_defaults(fonts_ignore = TRUE)
+```
+
+## One Sample T Test
+
+### One-Sample Statistics
+
+```{r}
+kable(params$descr)
+```
+
+### One-Sample Test
+#### Equal Variances Assumed
+
+```{r}
+table <- nice_table(params$results1)
+table <- autofit(table, add_w = 1.25)
+table
+```
+
+#### Equal Variances Not Assumed
+
+```{r}
+kable(params$results2)
+```
+
+### Effect Sizes
+
+```{r}
+params$cohens
+```

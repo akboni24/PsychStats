@@ -1,5 +1,7 @@
 library(shiny)
 library(sortable)
+library(gtsummary)
+library(rempsyc)
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
 indSamplesTUI <- function(id) {
@@ -49,7 +51,8 @@ indSamplesTUI <- function(id) {
         h5("Equal Variances Not Assumed"),
         verbatimTextOutput(ns("results2")),
         h5("Effect Sizes"),
-        verbatimTextOutput(ns("esResults"))
+        verbatimTextOutput(ns("esResults")),
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
   )
@@ -117,29 +120,56 @@ indSamplesTServer <- function(id, data) {
         }
         
         col <- data() %>% pull(input$rank_list_2)
-        grouping <- data() %>% pull(input$rank_list_3)
+        grouping <- data() %>% pull(input$rank_list_3) %>% as.factor()
         
+        descriptives <- indttestStats(col, grouping)
         
         output$descr <- renderTable({
-          indttestStats(col, grouping)
+          descriptives
         })
         
-        if(input$es == TRUE) {
-          # Check this
-          output$esResults <- renderPrint({cohensD(col ~ grouping)})
-        }
         
-        # Warning if there are more than two groups
+        # Warning if there are more than two groups ----------------------------
         if (nlevels(grouping) > 2) {
-          output$results <- renderText({paste("Grouping variable has more than 2 groups. Please select a different variable or conduct a One Way ANOVA.")})
-        } else{
-          results <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = TRUE)
-          results2 <- t.test(col ~ grouping, alternative="two.sided", data = data(), na.rm = TRUE, conf.level = confint, var.equal = FALSE)
-          # Come back to this, make the output an R Markdown file
-          # Should store results as a dictionary of the function/variable and the result
+          
+          output$results <- renderText({paste("Grouping variable has more than 2 groups. 
+                            Please select a different variable or conduct a One Way ANOVA.")})
+          
+        } else{   # Otherwise conduct independent samples test -----------------
+          
+          # Calculate t test with both equal variances assumed...
+          results <- t.test(col ~ grouping, alternative="two.sided", data = data(), 
+                            na.rm = TRUE, conf.level = confint, var.equal = TRUE)
+          # ... and equal variances not assumed
+          results2 <- t.test(col ~ grouping, alternative="two.sided", data = data(), 
+                             na.rm = TRUE, conf.level = confint, var.equal = FALSE)
+
           output$results <- renderPrint({results})
           output$results2 <- renderPrint({results2})
           
+          # Calculate effect sizes
+          if(input$es == TRUE) {
+            # Check this
+            d <- cohensD(col ~ grouping)
+            output$esResults <- renderPrint({cohensD(col ~ grouping)})
+          } else {
+            d <- "Not Calculated"
+          }
+          
+          # Generate pdf report ------------------------------------------------
+          # Tidy results
+          # results1_df <- tidy(results)
+          results2_df <- tidy(results2)
+          
+          results1_df <- nice_t_test(data=data(), response=input$rank_list_2,
+                                     group=input$rank_list_3, var.equal=TRUE)
+          
+          # Make parameters to pass to rMarkdown doc
+          params <- list(descr = descriptives, results1 = results1_df, 
+                         results2 = results2_df, cohens = d)
+          
+          # Generate pdf
+          output$report <- generate_report("ind_t_test_report", params)
         }
       
       }
