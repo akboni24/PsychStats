@@ -45,11 +45,13 @@ indSamplesTUI <- function(id) {
         textOutput(ns("warning")),
         h3("Two-Sample Statistics"),
         tableOutput(ns("descr")),
+        h3("Levene's Test for Equality of Variances"),
+        verbatimTextOutput(ns("levene")),
         h3("Two-Sample Test"),
         h5("Equal Variances Assumed"),
-        verbatimTextOutput(ns("results")),
+        tableOutput(ns("results")),
         h5("Equal Variances Not Assumed"),
-        verbatimTextOutput(ns("results2")),
+        tableOutput(ns("results2")),
         h5("Effect Sizes"),
         verbatimTextOutput(ns("esResults")),
         downloadButton(ns("report"), label = "Generate PDF")
@@ -99,29 +101,37 @@ indSamplesTServer <- function(id, data) {
       removeModal()
     })
     
-    # Wait for the user to hit submit
+    # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
+      # Check that each variable selected is the right type --------------------
       numeric <- check_condition(input$rank_list_2, data(), is.numeric)
       factor <- check_condition(input$rank_list_3, data(), is.numeric)
       
-      if (factor == TRUE) {
+      if (factor == TRUE) {  # Display warning for the factor variable 
         output$warning <- renderText({factor_warning(input$rank_list_3)})
       }
       
-      if (numeric == FALSE) {
+      # Show error message if the dependent variable is not numeric ------------
+      if (numeric == FALSE) {  
         output$errors <- renderText({errorText("categorical", "numeric")})
+      
+      # Otherwise calculate the the t test and display the results -------------
       } else {
         
+        # Grab the confidence interval -----------------------------------------
         if(is.null(input$confint)) {
           confint = 0.95
         } else {
           confint = input$confint
         }
         
+        # Grab each variable: col is dependent variable and grouping is the 
+        # factor/grouping variable ---------------------------------------------
         col <- data() %>% pull(input$rank_list_2)
         grouping <- data() %>% pull(input$rank_list_3) %>% as.factor()
         
+        # Calculate and display descriptives -----------------------------------
         descriptives <- indttestStats(col, grouping)
         
         output$descr <- renderTable({
@@ -137,36 +147,39 @@ indSamplesTServer <- function(id, data) {
           
         } else{   # Otherwise conduct independent samples test -----------------
           
-          # Calculate t test with both equal variances assumed...
-          results <- t.test(col ~ grouping, alternative="two.sided", data = data(), 
-                            na.rm = TRUE, conf.level = confint, var.equal = TRUE)
-          # ... and equal variances not assumed
-          results2 <- t.test(col ~ grouping, alternative="two.sided", data = data(), 
-                             na.rm = TRUE, conf.level = confint, var.equal = FALSE)
-
-          output$results <- renderPrint({results})
-          output$results2 <- renderPrint({results2})
+          # Calculate levene's test for equality of variances
+          levenes <- leveneTest(y=col, group=grouping, center=mean)
+          output$levene <- renderPrint({levenes})
           
-          # Calculate effect sizes
+          # Calculate t test with both equal variances assumed...
+          
+          results1_df <- nice_t_test(data=data(), response=input$rank_list_2,
+                                     group=input$rank_list_3, conf.level = confint,
+                                     var.equal=TRUE)
+          
+          # ... and equal variances not assumed
+          
+          results2_df <- nice_t_test(data=data(), response=input$rank_list_2,
+                                     group=input$rank_list_3, conf.level = confint,
+                                     var.equal=FALSE) 
+          
+          # Display the results in two tables
+          output$results <- renderTable({results1_df})
+          output$results2 <- renderTable({results2_df})
+          
+          # Calculate effect sizes ---------------------------------------------
           if(input$es == TRUE) {
-            # Check this
-            d <- cohensD(col ~ grouping)
+            d <- cohens_d(col ~ grouping, data=data(), ci=confint)
             output$esResults <- renderPrint({cohensD(col ~ grouping)})
           } else {
             d <- "Not Calculated"
           }
           
           # Generate pdf report ------------------------------------------------
-          # Tidy results
-          # results1_df <- tidy(results)
-          results2_df <- tidy(results2)
-          
-          results1_df <- nice_t_test(data=data(), response=input$rank_list_2,
-                                     group=input$rank_list_3, var.equal=TRUE)
-          
+        
           # Make parameters to pass to rMarkdown doc
           params <- list(descr = descriptives, results1 = results1_df, 
-                         results2 = results2_df, cohens = d)
+                         results2 = results2_df, l = levenes)
           
           # Generate pdf
           output$report <- generate_report("ind_t_test_report", params)

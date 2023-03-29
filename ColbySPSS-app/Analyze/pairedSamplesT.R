@@ -44,9 +44,10 @@ pairedSamplesTUI <- function(id) {
         h5("Paired-Samples Statistics"),
         tableOutput(ns("descr")),
         h5("Paired Samples Test"),
-        verbatimTextOutput(ns("results")),
+        tableOutput(ns("results")),
         h5("Effect Sizes"),
-        verbatimTextOutput(ns("esResults"))
+        verbatimTextOutput(ns("esResults")),
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
   )
@@ -104,12 +105,14 @@ pairedSamplesTServer <- function(id, data) {
         confint = input$confint
       }
       
-      
       # Check that each variable is numeric, if not, stop calc and print error -
       numeric1 <- check_condition(input$rank_list_2, data(), is.numeric)
       numeric2 <- check_condition(input$rank_list_3, data(), is.numeric)
+      
       if (numeric1 == FALSE | numeric2 == FALSE) {
         output$errors <- renderText({errorText("categorical", "numeric")})
+        
+      # Otherwise, calculate the t test and print the results ------------------
       } else {
       
         # Pull each variable from the dataset ----------------------------------
@@ -118,19 +121,38 @@ pairedSamplesTServer <- function(id, data) {
       
         
         # Make descriptives table ----------------------------------------------
+        descriptives <- ttestStats(col1, col2)
         output$descr <- renderTable({
-          ttestStats(col1, col2)
+          descriptives
         })
         
         # Calculate cohen's d --------------------------------------------------
         if(input$es == TRUE) {
-          # Check this
-          output$esResults <- renderPrint({cohensD(col1, col2)})
+          d <- cohens_d(col1, col2, paired=TRUE, ci=confint)
+          output$esResults <- renderPrint({d})
+        } else {
+          d <- "Not calculated"
         }
         
-        # Calculate t test and print results -----------------------------------
-        results <- t.test(col1, col2, paired = TRUE, conf.level = confint)
-        output$results <- renderPrint({results})
+        # Preparing the data (Converting to long format) -----------------------
+        var_list <- c(input$rank_list_2, input$rank_list_3)
+        
+        data_prepared <- data() %>%
+          gather(key="within_var", value="dependent_var", var_list) %>%
+          convert_as_factor(within_var)
+      
+        
+        # Conduct the paired samples t test ------------------------------------
+        results_df <- nice_t_test(data=data_prepared, response="dependent_var",
+                                  group="within_var", paired=TRUE,
+                                  conf.level = confint)
+        
+        output$results <- renderTable({results_df})
+        
+        # Generate the downloadable pdf report ---------------------------------
+        params <- list(descr = descriptives, results = results_df)
+        
+        output$report <- generate_report("paired_samples_report", params)
         
         
       }

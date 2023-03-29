@@ -1,9 +1,11 @@
 ---
-title: "One Sample T Test"
+title: "One Way ANOVA"
 output: pdf_document
 params:
-  descr: NA
-  results: NA
+  stats: NA
+  anova: NA
+  n2: NA
+  posthoc: NA
 ---
 
 ```{r setup, include=FALSE}
@@ -17,16 +19,25 @@ library(flextable)
 set_flextable_defaults(fonts_ignore = TRUE)
 ```
 
-## One Sample T Test
+## One-Way ANOVA
 
-### One-Sample Statistics
+### Statistics
 
 ```{r}
-kable(params$descr)
+lapply(params$stats, kable)
 ```
 
-### One-Sample Test
-
+### Anaysis of Variance Table
 ```{r}
-kable(params$results)
+kable(params$anova)
+```
+
+### Effect Sizes
+```{r}
+kable(params$n2)
+```
+
+### Pairwise Comparisons
+```{r}
+params$posthoc
 ```

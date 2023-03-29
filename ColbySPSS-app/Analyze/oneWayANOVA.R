@@ -52,7 +52,8 @@ oneWayAnovaUI <- function(id) {
         h3("Effect Sizes"),
         tableOutput(ns("esResults")),
         h3("Post Hoc Tests"),
-        verbatimTextOutput(ns("phTests"))
+        verbatimTextOutput(ns("phTests")),
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
   )
@@ -135,34 +136,42 @@ oneWayAnovaServer <- function(id, data) {
           return(anovaResults)
         })
         
-        # Calculate chosen statistics --------------------------------------------
+        # Calculate chosen statistics ------------------------------------------
+        stats_results <- anovaOptionsCalc(input$stat, col1 ~ col2, col1, col2)
         if (!is.null(input$stat)) {
           output$statsresults <- renderPrint({
-            anovaOptionsCalc(input$stat, col1 ~ col2, col1, col2)
+            stats_results
           })
         }
         
-        # Calculate effect sizes -------------------------------------------------
-        esResults <- list()
+        # Calculate effect sizes -----------------------------------------------
+        esResults <- etaSquared(lm(col1 ~ col2))
         if (input$es == TRUE) {
           options(es.use_symbols = TRUE)
           output$esResults <- renderTable({
-            return(etaSquared(lm(col1 ~ col2)))
+            esResults
           })
         }
         
-        # Calculate post hoc tests -----------------------------------------------
+        # Calculate post hoc tests ---------------------------------------------
         if(is.null(input$confint)) {
           confint = 0.95
         } else {
           confint = input$confint
         }
         
+        posthoc <- postHocCalc(input$eva, col1, col2, confint)
         if (!is.null(input$eva)) {
           output$phTests <- renderPrint({
-            postHocCalc(input$eva, col1, col2, confint)
+            posthoc
           })
         }
+        
+        # Generate the downloadable pdf report ---------------------------------
+        params <- list(stats=stats_results, anova=anovaResults, n2=esResults,
+                       posthoc=posthoc)
+        
+        output$report <- generate_report("one_way_anova_report", params)
       }
       
     })

@@ -5,11 +5,12 @@ params:
   descr: NA
   results1: NA
   results2: NA
-  cohens: NA
+  l: NA
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
 library(shiny)
 library(dplyr)
 library(knitr)
@@ -18,31 +19,29 @@ library(flextable)
 set_flextable_defaults(fonts_ignore = TRUE)
 ```
 
-## One Sample T Test
+## Independent Samples T Test
 
-### One-Sample Statistics
+### Two-Sample Statistics
 
 ```{r}
 kable(params$descr)
 ```
 
-### One-Sample Test
+### Levene's Test for Equality of Variances
+```{r}
+kable(params$l)
+```
+
+
+### Two-Sample Test
 #### Equal Variances Assumed
 
 ```{r}
-table <- nice_table(params$results1)
-table <- autofit(table, add_w = 1.25)
-table
+kable(params$results1)
 ```
 
 #### Equal Variances Not Assumed
 
 ```{r}
 kable(params$results2)
-```
-
-### Effect Sizes
-
-```{r}
-params$cohens
 ```

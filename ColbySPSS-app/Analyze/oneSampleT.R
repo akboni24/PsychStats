@@ -47,7 +47,7 @@ oneSampleTUI <- function(id) {
         h5("One-Sample Statistics"),
         tableOutput(ns("descr")),
         h5("One-Sample Test"),
-        verbatimTextOutput(ns("results")),
+        tableOutput(ns("results")),
         h5("Effect Sizes"),
         verbatimTextOutput(ns("esResults")),
         downloadButton(ns("report"), label = "Generate PDF")
@@ -99,15 +99,17 @@ oneSampleTServer <- function(id, data) {
       # Extract the variable from the data -------------------------------------
       col <- data() %>% pull(input$rank_list_2)
       
-      # Check to see if the variable is numeric - if not, do not continue and 
-      # print an error message
+      # Check to see if the variable is numeric 
       numeric <- check_condition(input$rank_list_2, data(), is.numeric)
       
+      # If variable is not numeric, print an error message
       if (numeric == FALSE) {
         output$errors <- renderText({errorText("categorical", "numeric")})
-        
+      
+      # Otherwise, calculate the t test and display the results ----------------
       } else {
         
+        # Calculate and display descriptives -----------------------------------
         descriptives <- ttestStats(col)
         output$descr <- renderTable({
           descriptives
@@ -120,20 +122,22 @@ oneSampleTServer <- function(id, data) {
           confint = input$confint
         }
         
+        # Calculate effect sizes -----------------------------------------------
         if(input$es == TRUE) {
-          # Check this
-          output$esResults <- renderPrint({cohensD(col, input$testValue)})
+          d <- cohens_d(col, mu=input$testValue, ci=confint)
+          output$esResults <- renderPrint({d})
+        } else {
+          d <- "Not calculated"
         }
+        
+        # Conduct the one sample t test ----------------------------------------
+        results_df <- nice_t_test(data=data(), response=input$rank_list_2,
+                                  mu=input$testValue, conf.level = confint)
 
-        results <- t.test(col, mu=input$testValue, alternative="two.sided", 
-                          conf.level = confint)
+        output$results <- renderTable({results_df})
         
-       
-        output$results <- renderPrint({results})
-        results_df <- tidy(results)
-        
-        params <- list(descr = descriptives, results = results_df, var = col,
-                                           test = input$testValue)
+        # Generate the downloadable pdf report ---------------------------------
+        params <- list(descr = descriptives, results = results_df)
         
         output$report <- generate_report("t_test_report", params)
       }

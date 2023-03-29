@@ -1,5 +1,5 @@
 ---
-title: "One Sample T Test"
+title: "Paired Samples T Test"
 output: pdf_document
 params:
   descr: NA
@@ -8,24 +8,24 @@ params:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=FALSE)
-knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
+# knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
 library(shiny)
 library(dplyr)
 library(knitr)
 library(rempsyc)
 library(flextable)
-set_flextable_defaults(fonts_ignore = TRUE)
+# set_flextable_defaults(fonts_ignore = TRUE)
 ```
 
-## One Sample T Test
+## Paired Samples T Test
 
-### One-Sample Statistics
+### Two-Sample Statistics
 
 ```{r}
 kable(params$descr)
 ```
 
-### One-Sample Test
+### Paired Samples Test
 
 ```{r}
 kable(params$results)
