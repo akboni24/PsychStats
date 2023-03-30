@@ -45,8 +45,12 @@ oneWayAnovaUI <- function(id) {
         width = 10,
         span(textOutput(ns("errors")), style="color:red"),
         textOutput(ns("warning")),
-        h3("Statistics"),
-        verbatimTextOutput(ns("statsresults")),
+        h3("Descriptive Statistics"),
+        tableOutput(ns("descr")),
+        h3("Levene's Test for Homogeneity of Variances"),
+        verbatimTextOutput(ns("levene")),
+        h3("Welch Test"),
+        verbatimTextOutput(ns("welch")),
         h3("ANOVA"),
         tableOutput(ns("results")),
         h3("Effect Sizes"),
@@ -137,11 +141,40 @@ oneWayAnovaServer <- function(id, data) {
         })
         
         # Calculate chosen statistics ------------------------------------------
-        stats_results <- anovaOptionsCalc(input$stat, col1 ~ col2, col1, col2)
+        
         if (!is.null(input$stat)) {
-          output$statsresults <- renderPrint({
-            stats_results
-          })
+          
+          if ("Descriptives" %in% input$stat) {
+            
+            descriptives <- anovaDescriptives(col1, col2)
+            output$descr <- renderTable({
+              descriptives
+            })
+          } else {
+            descriptives <- "Not Calulated"
+          }
+          
+          if ("Homogeneity of variance test" %in% input$stat) {
+            
+            levene <- leveneTest(col1 ~ col2, center=mean)
+            output$levene <- renderPrint({
+              levene
+            })
+          } else {
+            levene <- "Not Calulated"
+          }
+          
+          if ("Welch Test" %in% input$stat) {
+            
+            welch <- oneway.test(col1 ~ col2)
+            output$welch <- renderPrint({
+              welch
+            })
+          } else {
+            welch <- "Not Calulated"
+          }
+          
+      
         }
         
         # Calculate effect sizes -----------------------------------------------
@@ -168,7 +201,9 @@ oneWayAnovaServer <- function(id, data) {
         }
         
         # Generate the downloadable pdf report ---------------------------------
-        params <- list(stats=stats_results, anova=anovaResults, n2=esResults,
+        emmeans <- emmeans(lm(col1 ~ col2), specs= ~ col2)
+        params <- list(descr = descriptives, levene=levene, welch=welch,
+                       anova=anovaResults, n2=esResults, em=emmeans,
                        posthoc=posthoc)
         
         output$report <- generate_report("one_way_anova_report", params)

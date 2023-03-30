@@ -59,6 +59,38 @@ postHocCalc <- function(tests, var1, var2, conflvl) {
   
 }
 
+
+descr_helper <- function(dep, factor, func) {
+  tapply(dep, factor, func)
+}
+
+stderror <- function(x) sd(x)/sqrt(length(x))
+
+anovaDescriptives <- function(dep, var) {
+    var <- as.factor(var)
+    
+    Factor.Levels <- levels(var)
+    append(Factor.Levels, "Total")
+    
+    N <- descr_helper(dep, var, length)
+    append(N, length(var))
+    
+    Mean <- descr_helper(dep, var, mean)
+    append(Mean, mean(dep))
+    
+    Std.Dev <- descr_helper(dep, var, sd)
+    append(Std.Dev, sd(dep))
+    
+    Std.Error <- descr_helper(dep, var, stderror)
+    append(Std.Error, stderror(dep))
+    
+    df <- data.frame(Factor.Levels, N, Mean, Std.Dev, Std.Error)
+    
+    return(df)
+
+}
+
+
 # Options Calculations for ANOVA -----------------------------------------------
 anovaOptionsCalc <- function(tests, formula, var1, var2, var3 = NULL) {
   #' Calculates the optional statistics for an aov object

@@ -2,9 +2,12 @@
 title: "One Way ANOVA"
 output: pdf_document
 params:
-  stats: NA
+  descr: NA
+  levene: NA
+  welch: NA
   anova: NA
   n2: NA
+  em: NA
   posthoc: NA
 ---
 
@@ -21,13 +24,22 @@ set_flextable_defaults(fonts_ignore = TRUE)
 
 ## One-Way ANOVA
 
-### Statistics
-
+### Descriptives
 ```{r}
-lapply(params$stats, kable)
+kable(params$descr)
 ```
 
-### Anaysis of Variance Table
+### Levene's Test for Homogeneity of Variances
+```{r}
+kable(params$levene)
+```
+
+### Welch Test
+```{r}
+kable(params$welch)
+```
+
+### Analysis of Variance Table
 ```{r}
 kable(params$anova)
 ```
@@ -35,6 +47,11 @@ kable(params$anova)
 ### Effect Sizes
 ```{r}
 kable(params$n2)
+```
+
+### Estimated Marginal Means
+```{r}
+summary(params$em)
 ```
 
 ### Pairwise Comparisons
