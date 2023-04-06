@@ -65,7 +65,8 @@ repeatedMeasuresUI <- function(id) {
         h3("Post Hoc Tests"),
         verbatimTextOutput(ns("phTests")),
         h3("Plots"),
-        plotOutput(ns("plotResults"))
+        plotOutput(ns("plotResults")),
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
   )
@@ -270,6 +271,11 @@ repeatedMeasuresServer <- function(id, data) {
           }
           
         }
+        params <- list(descr=descriptives, levene=levene, welch=welch,
+                       anova=anovaResults, n2=esResults, em=emmeans,
+                       posthoc=posthoc, se=se_results)
+        
+        output$report <- generate_report("univariate_report", params)
       }
     })
     

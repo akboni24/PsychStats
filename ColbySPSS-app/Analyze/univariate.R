@@ -49,7 +49,11 @@ univariateUI <- function(id) {
         span(textOutput(ns("errors")), style="color:red"),
         textOutput(ns("warning")),
         h3("Descriptive Statistics"),
-        verbatimTextOutput(ns("statsresults")),
+        tableOutput(ns("descr")),
+        h3("Levene's Test for Homogeneity of Variances"),
+        verbatimTextOutput(ns("levene")),
+        h3("Welch Test"),
+        verbatimTextOutput(ns("welch")),
         h3("ANOVA"),
         verbatimTextOutput(ns("results")),
         h3("Effect Sizes"),
@@ -70,6 +74,12 @@ univariateUI <- function(id) {
         selectInput(ns("setestadj"), label = "ADJ", choices = c("Bonferroni", "LSD")),
         actionButton(ns("seOK"), label = "OK"),
         verbatimTextOutput(ns("seResults"))
+      )
+    ),
+    fluidRow(
+      column(
+        width=12,
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
   )
@@ -164,10 +174,11 @@ univariateServer <- function(id, data) {
         col1 <- data() %>% pull(input$rank_list_2)
         col2 <- as.factor(data() %>% pull(input$rank_list_3[1]))
         col3 <- as.factor(data() %>% pull(input$rank_list_3[2]))
-        anovaResults <- aov(col1 ~ col2 + col3 + col2:col3, data=data())
+        anova_lm <- lm(col1 ~ col2*col3)
+        anovaResults <- anova(anova_lm)
         
         output$results <- renderPrint({
-          summary(anovaResults)
+          anovaResults
         })
         
         # Make plots -------------------------------------------------------------
@@ -182,55 +193,98 @@ univariateServer <- function(id, data) {
         }
         if (!is.null(input$plotXAxis)) {
           output$plotResults <- renderPlot({
-            uniMakePlot(data(), input$plotXAxis, input$plotSepLines, input$rank_list_2, input$type, errorBars)
+            uniMakePlot(data(), input$plotXAxis, input$plotSepLines, input$rank_list_2, 
+                        input$type, errorBars)
           })
         }
         
         # Calculate chosen statistics --------------------------------------------
         if (!is.null(input$stat)) {
-          output$statsresults <- renderPrint({
-            anovaOptionsCalc(input$stat, col1 ~ col2 * col3, col1, col2, col3)
-          })
+          
+          if ("Descriptives" %in% input$stat) {
+            descriptives <- two_way_anovaDescriptives(data(), input$rank_list_2, 
+                                         input$rank_list_3[1], input$rank_list_3[2])
+            output$descr <- renderTable({
+              descriptives
+            })
+          } else {
+            descriptives <- "Not Calulated"
+          }
+          
+          if ("Homogeneity of variance test" %in% input$stat) {
+            levene <- leveneTest(anova_lm, center=mean)
+            output$levene <- renderPrint({
+              levene
+            })
+          } else {
+            levene <- "Not Calulated"
+          }
+          
+          if ("Welch Test" %in% input$stat) {
+            welch <- oneway.test(anova_lm)
+            output$welch <- renderPrint({
+              welch
+            })
+          } else {
+            welch <- "Not Calulated"
+          }
+          
+          
         }
         
         # Calculate effect sizes -------------------------------------------------
-        esResults <- list()
         if (input$es == TRUE) {
           options(es.use_symbols = TRUE)
+          esResults <- etaSquared(anova_lm)
           output$esResults <- renderTable({
-            return(etaSquared(lm(col1 ~ col2 + col3 + col2:col3)))
+            return(esResults)
           })
+        } else {
+          esResults <- "Not Calculated"
         }
         
         # Conduct Post Hoc Tests -------------------------------------------------
         if (!is.null(input$eva)) {
           if (input$rank_list_3[1] %in% input$postHocVars && input$rank_list_3[2] %in% input$postHocVars) {
+            posthoc <- uniPostHocCalc(input$eva, col1, col2, col3, 0.95)
             output$phTests <- renderPrint({
-            uniPostHocCalc(input$eva, col1, col2, col3)
+              posthoc
         })
         } else if (input$rank_list_3[1] %in% input$postHocVars) {
+          posthoc <- postHocCalc(input$eva, col1, col2, 0.95)
           output$phTests <- renderPrint({
-            postHocCalc(input$eva, col1, col2, 0.95)
+            posthoc
           })
         } else if (input$rank_list_3[2] %in% input$postHocVars) {
+          posthoc <- postHocCalc(input$eva, col1, col3, 0.95)
           output$phTests <- renderPrint({
-            postHocCalc(input$eva, col1, col3, 0.95)
+            posthoc
           })
+        } else {
+          posthoc <- "Not Calculated"
         }
         
         }
         
         # Calculate EM Means -----------------------------------------------------
         if (!is.null(input$EMVars)) {
+          if (!is.null(input$ciadj)) {
+            ciadj <- input$ciadj
+          } else {
+            ciadj <- "none"
+          }
+          emmeans <- uniEMCalc(input$EMVars, input$ciadj, anova_lm, col2, col3)
           output$emResults <- renderPrint({
-            uniEMCalc(input$EMVars, input$ciadj, lm(col1 ~ col2 + col3 + col2:col3), col2, col3)
+            emmeans
           })
+        } else {
+          emmeans <- "Not Calculated"
         }
       
         observeEvent(input$rank_list_3, {
           updateSelectInput(session, "setestvar", choices = input$rank_list_3)
-          # NEED TO FIX IF USER WANTS FIRST OPTION (ALREADY SELECTED)
         })
+        
         
         observeEvent(input$seOK,
          {
@@ -245,7 +299,6 @@ univariateServer <- function(id, data) {
            }
            
            
-           
            se_results <- test(contrast(lsm, "poly"), joint = TRUE)
            #se_results <- test_simple_effects(data(), not_selected, input$rank_list_2, 
            #sefactor)
@@ -254,7 +307,22 @@ univariateServer <- function(id, data) {
            output$seResults <- renderPrint({
              se_results
            })
+           
+           # Generate the downloadable pdf report ---------------------------------
+           params <- list(descr=descriptives, levene=levene, welch=welch,
+                          anova=anovaResults, n2=esResults, em=emmeans,
+                          posthoc=posthoc, se=se_results)
+           
+           output$report <- generate_report("univariate_report", params)
          })
+        
+        # Generate the downloadable pdf report ---------------------------------
+        se_results <- "Not Calculated"
+        params <- list(descr=descriptives, levene=levene, welch=welch,
+                       anova=anovaResults, n2=esResults, em=emmeans,
+                       posthoc=posthoc, se=se_results)
+      
+        output$report <- generate_report("univariate_report", params)
 
       }
       })

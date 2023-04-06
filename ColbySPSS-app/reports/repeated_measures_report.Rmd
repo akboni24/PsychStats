@@ -1,0 +1,66 @@
+---
+title: "Repeated Measures ANOVA"
+output: pdf_document
+params:
+  descr: NA
+  levene: NA
+  welch: NA
+  anova: NA
+  n2: NA
+  em: NA
+  posthoc: NA
+  se: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
+library(shiny)
+library(dplyr)
+library(knitr)
+library(rempsyc)
+library(flextable)
+set_flextable_defaults(fonts_ignore = TRUE)
+```
+
+## Univariate
+
+### Descriptives
+```{r}
+kable(params$descr)
+```
+
+### Levene's Test for Homogeneity of Variances
+```{r}
+kable(params$levene)
+```
+
+### Welch Test
+```{r}
+kable(params$welch)
+```
+
+### Analysis of Variance Table
+```{r}
+kable(params$anova)
+```
+
+### Effect Sizes
+```{r}
+kable(params$n2)
+```
+
+### Estimated Marginal Means
+```{r}
+summary(params$em)
+```
+
+### Pairwise Comparisons
+```{r}
+params$posthoc
+```
+
+### Test for Simple Effects
+```{r}
+params$se
+```

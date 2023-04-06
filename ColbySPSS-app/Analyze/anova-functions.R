@@ -51,10 +51,10 @@ postHocCalc <- function(tests, var1, var2, conflvl) {
   # ------------------------------------------------------------------------------
   if ("Bonferroni" %in% tests) {
     return(pairwise.t.test(var1, var2, p.adj = "bonf"))
-  } else if ("LSD" %in% tests) {
-    return(pairwise.t.test(var1, var2, p.adj = "lsd", conf.level = conflvl))
   } else if ("Tukey's HSD" %in% tests) {
     return(TukeyHSD(aov(var1 ~ var2)))
+  } else {
+    return(pairwise.t.test(var1, var2, p.adj = "none", conf.level = conflvl))
   }
   
 }
@@ -66,22 +66,23 @@ descr_helper <- function(dep, factor, func) {
 
 stderror <- function(x) sd(x)/sqrt(length(x))
 
-anovaDescriptives <- function(dep, var) {
-    var <- as.factor(var)
+anovaDescriptives <- function(dep, vars) {
+
+    vars <- lapply(vars, as.factor)
     
-    Factor.Levels <- levels(var)
+    Factor.Levels <- levels(vars)
     append(Factor.Levels, "Total")
     
-    N <- descr_helper(dep, var, length)
-    append(N, length(var))
+    N <- descr_helper(dep, vars, length)
+    append(N, length(vars))
     
-    Mean <- descr_helper(dep, var, mean)
+    Mean <- descr_helper(dep, vars, mean)
     append(Mean, mean(dep))
-    
-    Std.Dev <- descr_helper(dep, var, sd)
+
+    Std.Dev <- descr_helper(dep, vars, sd)
     append(Std.Dev, sd(dep))
     
-    Std.Error <- descr_helper(dep, var, stderror)
+    Std.Error <- descr_helper(dep, vars, stderror)
     append(Std.Error, stderror(dep))
     
     df <- data.frame(Factor.Levels, N, Mean, Std.Dev, Std.Error)
@@ -89,6 +90,40 @@ anovaDescriptives <- function(dep, var) {
     return(df)
 
 }
+
+two_way_anovaDescriptives <- function(data, dep, var1, var2) {
+  factor <- as.factor(data %>% pull(var1))
+  dfs <- split(data, factor)
+  final_dfs <- lapply(dfs, FUN=anovaDescriptives2, dep, var2)
+}
+
+anovaDescriptives2 <- function(data, dep_name, vars_name) {
+  
+  dep <- data %>% pull(dep_name)
+  vars <- as.factor(data %>% pull(vars_name))
+  #vars <- lapply(vars, as.factor)
+  
+  Factor.Levels <- levels(vars)
+  append(Factor.Levels, "Total")
+  
+  N <- descr_helper(dep, vars, length)
+  append(N, length(vars))
+  
+  Mean <- descr_helper(dep, vars, mean)
+  append(Mean, mean(dep))
+  
+  Std.Dev <- descr_helper(dep, vars, sd)
+  append(Std.Dev, sd(dep))
+  
+  Std.Error <- descr_helper(dep, vars, stderror)
+  append(Std.Error, stderror(dep))
+  
+  df <- data.frame(Factor.Levels, N, Mean, Std.Dev, Std.Error)
+  
+  return(df)
+  
+}
+
 
 
 # Options Calculations for ANOVA -----------------------------------------------
@@ -197,26 +232,17 @@ uniPostHocModal <- function(input, output, session, factors) {
   )
 }
 
+
 # Post Hoc Calculations for Two Way ANOVA --------------------------------------
-uniPostHocCalc <- function(tests, y, factor1, factor2) {
+uniPostHocCalc <- function(tests, y, factor1, factor2, conflvl) {
   #' Calculates post hoc tests for a two way anova
   #' Arguments: tests (list of tests), y (dependent variable), 
   #' vars (factors for the anova), and anova (anova object)
   # ----------------------------------------------------------------------------
-  results <- list()
-  if ("Bonferroni" %in% tests) {
-    append(results, pairwise.t.test(y, factor1, p.adj = "bonf"))
-    append(results, pairwise.t.test(y, factor2, p.adj = "bonf"))
-  } else if ("Tukey's HSD" %in% tests) {
-    return(TukeyHSD(aov(lm(y ~ factor1 + factor2 + factor1:factor2))))
-  } else {
-    append(results, pairwise.t.test(y, factor1, p.adj = "none"))
-    append(results, pairwise.t.test(y, factor2, p.adj = "none"))
-  }
+  factors <- list(factor1, factor2)
+  results <- lapply(factors, postHocCalc, tests=tests, var1=y, conflvl=conflvl)
   results
-  
 }
-
 
 # EM Means Modal for Two Way ANOVA ---------------------------------------------
 uniEMModal <- function(input, output, session, factors) {
