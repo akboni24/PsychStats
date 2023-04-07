@@ -55,7 +55,9 @@ repeatedMeasuresUI <- function(id) {
         width = 10,
         span(textOutput(ns("errors")), style="color:red"),
         h3("Descriptive Statistics"),
-        verbatimTextOutput(ns("statsresults")),
+        tableOutput(ns("descr")),
+        h3("Levene's Test for Homogeneity of Variances"),
+        verbatimTextOutput(ns("levene")),
         h3("ANOVA"),
         verbatimTextOutput(ns("results")),
         h3("Effect Sizes"),
@@ -160,15 +162,32 @@ repeatedMeasuresServer <- function(id, data) {
                                       proceeding."})
       } else {
       
-        # Calculate the ANOVA and display the results in a table -----------------
+        # Calculate the ANOVA and display the results in a table ---------------
+        mixed <- length(input$rank_list_3) > 0
+        two_way <- length(input$rank_list_2) > 1
         # Preparing the data
-        data_prepared <- data() %>%
-                         gather(key="within_var", value="dependent_var", input$rank_list_2) %>%
-                         convert_as_factor(within_var)
+        if (two_way == FALSE) {
+          data_prepared <- data() %>%
+            gather(key="within_var", value="dependent_var", input$rank_list_2) %>%
+            convert_as_factor(within_var)
+          
+          within_var <- data_prepared %>% pull("within_var")
+        } else {
+          data_prepared <- data() %>%
+            gather(key="within_var1", value="dependent_var1", input$rank_list_2[1]) %>%
+            convert_as_factor(within_var1)
+          
+          data_prepared <- data_prepared() %>%
+            gather(key="within_var2", value="dependent_var2", input$rank_list_2[2]) %>%
+            convert_as_factor(within_var2)
+          
+          within_var <- data_prepared %>% pull("within_var1")
+          
+          within_var2 <- data_prepared %>% pull("within_var2")
+        }
         
-        within_var <- data_prepared %>% pull("within_var")
        
-        if (length(input$rank_list_3) == 0) {
+        if (mixed == FALSE && two_way == FALSE) {
           anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
                                  within = c("within_var"), data=data_prepared)
           all_vars <- within_var
@@ -206,20 +225,43 @@ repeatedMeasuresServer <- function(id, data) {
         
         # Calculate chosen statistics --------------------------------------------
         if (!is.null(input$stat)) {
-          if (is.null(input$rank_list_3)) {
-            output$statsresults <- renderPrint({
-              anovaOptionsCalc(input$stat, data_prepared$dependent_var ~ data_prepared$within_var, 
-                               data_prepared$dependent_var, data_prepared$within_var)
-            })
+          
+          if ("Descriptives" %in% input$stat) {
+            if (mixed == FALSE) {
+              descriptives <- anovaDescriptives(data_prepared(), "dependent var",
+                                                "within_var")
             } else {
-              output$statsresults <- renderPrint({
-                anovaOptionsCalc(input$stat, data_prepared$dependent_var ~ data_prepared$within_var *
-                                   between_var, data_prepared$dependent_var, 
-                                 data_prepared$within_var,between_var)
-              })
+              descriptives <- two_way_anovaDescriptives(data_prepared(), "dependent var",
+                                                "within_var", input$rank_list_3)
+            }
+            
+            output$descr <- renderTable({
+              descriptives
+            })
+          } else {
+            descriptives <- "Not Calulated"
           }
           
+          if ("Homogeneity of variance test" %in% input$stat) {
+            if (mixed == TRUE) {
+              levene <- leveneTest(anova_lm, center=mean)
+              output$levene <- renderPrint({
+                levene
+            })
+          } else {
+            levene <- "Not Calulated"
+          } 
+          
+        } else {
+            levene <- "Not Calulated"
         }
+          
+        } else {
+          descriptives <- "Not Calculated"
+          levene <- "Not Calulated"
+          welch <- "Not Calulated"
+        }
+          
         
         # Calculate effect sizes -------------------------------------------------
         esResults <- list()
@@ -276,6 +318,7 @@ repeatedMeasuresServer <- function(id, data) {
                        posthoc=posthoc, se=se_results)
         
         output$report <- generate_report("univariate_report", params)
+        
       }
     })
     

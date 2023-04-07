@@ -221,15 +221,24 @@ univariateServer <- function(id, data) {
           }
           
           if ("Welch Test" %in% input$stat) {
-            welch <- oneway.test(anova_lm)
-            output$welch <- renderPrint({
-              welch
-            })
+            if (len(input$rank_list_3) == 1) {
+              welch <- oneway.test(anova_lm)
+              output$welch <- renderPrint({
+                welch
+              })
+            } else {
+              welch <- "Not Calculated"
+            }
+            
           } else {
             welch <- "Not Calulated"
           }
           
           
+        } else {
+          descriptives <- "Not Calculated"
+          levene <- "Not Calulated"
+          welch <- "Not Calulated"
         }
         
         # Calculate effect sizes -------------------------------------------------
@@ -264,6 +273,8 @@ univariateServer <- function(id, data) {
           posthoc <- "Not Calculated"
         }
         
+        } else {
+          posthoc <- "Not Calculated"
         }
         
         # Calculate EM Means -----------------------------------------------------

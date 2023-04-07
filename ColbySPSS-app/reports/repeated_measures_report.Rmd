@@ -23,11 +23,11 @@ library(flextable)
 set_flextable_defaults(fonts_ignore = TRUE)
 ```
 
-## Univariate
+## Repeated Measures ANOVA
 
 ### Descriptives
-```{r}
-kable(params$descr)
+```{r, results='asis'}
+for(x in params$descr) print(kable(x))
 ```
 
 ### Levene's Test for Homogeneity of Variances

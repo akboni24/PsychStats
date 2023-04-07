@@ -146,7 +146,8 @@ oneWayAnovaServer <- function(id, data) {
           
           if ("Descriptives" %in% input$stat) {
             
-            descriptives <- anovaDescriptives(col1, col2)
+            descriptives <- anovaDescriptives(data(), input$rank_list_2, 
+                                              input$rank_list_3)
             output$descr <- renderTable({
               descriptives
             })

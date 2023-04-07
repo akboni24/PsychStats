@@ -66,59 +66,60 @@ descr_helper <- function(dep, factor, func) {
 
 stderror <- function(x) sd(x)/sqrt(length(x))
 
-anovaDescriptives <- function(dep, vars) {
-
-    vars <- lapply(vars, as.factor)
-    
-    Factor.Levels <- levels(vars)
-    append(Factor.Levels, "Total")
-    
-    N <- descr_helper(dep, vars, length)
-    append(N, length(vars))
-    
-    Mean <- descr_helper(dep, vars, mean)
-    append(Mean, mean(dep))
-
-    Std.Dev <- descr_helper(dep, vars, sd)
-    append(Std.Dev, sd(dep))
-    
-    Std.Error <- descr_helper(dep, vars, stderror)
-    append(Std.Error, stderror(dep))
-    
-    df <- data.frame(Factor.Levels, N, Mean, Std.Dev, Std.Error)
-    
-    return(df)
-
-}
+# anovaDescriptives <- function(dep, vars) {
+# 
+#     vars <- lapply(vars, as.factor)
+#     
+#     Factor.Levels <- levels(vars)
+#     append(Factor.Levels, "Total")
+#     
+#     N <- descr_helper(dep, vars, length)
+#     append(N, length(vars))
+#     
+#     Mean <- descr_helper(dep, vars, mean)
+#     append(Mean, mean(dep))
+# 
+#     Std.Dev <- descr_helper(dep, vars, sd)
+#     append(Std.Dev, sd(dep))
+#     
+#     Std.Error <- descr_helper(dep, vars, stderror)
+#     append(Std.Error, stderror(dep))
+#     
+#     df <- data.frame(Factor.Levels, N, Mean, Std.Dev, Std.Error)
+#     
+#     return(df)
+# 
+# }
 
 two_way_anovaDescriptives <- function(data, dep, var1, var2) {
   factor <- as.factor(data %>% pull(var1))
   dfs <- split(data, factor)
-  final_dfs <- lapply(dfs, FUN=anovaDescriptives2, dep, var2)
+  final_dfs <- lapply(dfs, FUN=anovaDescriptives, dep, var2)
 }
 
-anovaDescriptives2 <- function(data, dep_name, vars_name) {
+anovaDescriptives <- function(data, dep_name, vars_name) {
   
   dep <- data %>% pull(dep_name)
   vars <- as.factor(data %>% pull(vars_name))
   #vars <- lapply(vars, as.factor)
   
   Factor.Levels <- levels(vars)
-  append(Factor.Levels, "Total")
+  Factor.Levels <- append(Factor.Levels, c("Total"))
   
   N <- descr_helper(dep, vars, length)
-  append(N, length(vars))
+  N <- append(N, c(length(vars)))
   
   Mean <- descr_helper(dep, vars, mean)
-  append(Mean, mean(dep))
+  Mean <- append(Mean, c(mean(dep)))
   
   Std.Dev <- descr_helper(dep, vars, sd)
-  append(Std.Dev, sd(dep))
+  Std.Dev <- append(Std.Dev, c(sd(dep)))
   
   Std.Error <- descr_helper(dep, vars, stderror)
-  append(Std.Error, stderror(dep))
+  Std.Error <- append(Std.Error, c(stderror(dep)))
   
   df <- data.frame(Factor.Levels, N, Mean, Std.Dev, Std.Error)
+  names(df)[1] <- vars_name
   
   return(df)
   
