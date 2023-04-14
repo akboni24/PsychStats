@@ -13,13 +13,25 @@ repeatedMeasuresUI <- function(id) {
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
     
     titlePanel("Repeated Measures"),
+    fluidRow (
+      column (
+        width = 12,
+        h5("Note: You must have a Participant ID column as the first column
+           in your dataset in order to conduct a Repeated Measures ANOVA.")
+      )
+    ),
     
     fluidRow(
       column (
-        width = 12,
-        textInput(ns("ws"), label = "Within-Subject Factor Name: "),
-        numericInput(ns("numlvls"), label = "Number of Levels: ", value=0),
-        actionButton(ns("define"), "Define")
+        width = 6,
+        textInput(ns("ws1"), label = "Within-Subject Factor 1 Name: "),
+        numericInput(ns("numlvls1"), label = "Number of Levels: ", value=0),
+        actionButton(ns("define1"), "Define")
+      ),
+      column (
+        width = 6,
+        textInput(ns("ws2"), label = "Within-Subject Factor 2 Name: "),
+        numericInput(ns("numlvls2"), label = "Number of Levels: ", value=0),
       )
     ),
     # Creates two drag and drop buckets
@@ -61,7 +73,7 @@ repeatedMeasuresUI <- function(id) {
         h3("ANOVA"),
         verbatimTextOutput(ns("results")),
         h3("Effect Sizes"),
-        tableOutput(ns("esResults")),
+        verbatimTextOutput(ns("esResults")),
         h3("Estimated Marginal Means"),
         verbatimTextOutput(ns("emResults")),
         h3("Post Hoc Tests"),
@@ -87,7 +99,7 @@ repeatedMeasuresServer <- function(id, data) {
     output$sortable <- renderUI({
       # JUST IMPLEMENT A CHECK THAT WARNS THEM IF THEY HAVENT MAPPED A VARIABLE TO 
       # EACH FACTOR LEVEL YET
-      req(input$define)
+      req(input$define1)
       ns <- NS(id)
       bucket_list(
         header = NULL,
@@ -98,7 +110,7 @@ repeatedMeasuresServer <- function(id, data) {
           labels = vars(),
           input_id = ns("rank_list_1")),
         add_rank_list(
-          text = "Within-Subjects Variable Levels: ",
+          text = "Within-Subjects Variable 1 Levels: ",
           labels = NULL,
           input_id = ns("rank_list_2")
         ),
@@ -109,13 +121,13 @@ repeatedMeasuresServer <- function(id, data) {
         ))
       
     })
-    
   
     
     # Show plot, post hoc, and options modals if selected ----------------------
     
     observeEvent(input$plots, {
-      showModal(uniPlotsModal(input, output, session, c(input$ws, input$rank_list_3)))
+      showModal(uniPlotsModal(input, output, session, c(input$ws1, input$ws2,
+                                                        input$rank_list_3)))
     })
     
     observeEvent(input$continue, {
@@ -123,7 +135,7 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$posthoc, {
-      showModal(uniPostHocModal(input, output, session, c(input$ws, input$rank_list_3)))
+      showModal(uniPostHocModal(input, output, session, c(input$ws1, input$rank_list_3)))
     }) 
     
     observeEvent(input$continue, {
@@ -139,186 +151,236 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$emmeans, {
-      showModal(uniEMModal(input, output, session, c(input$ws, input$rank_list_3)))
+      showModal(uniEMModal(input, output, session, c(input$ws1, input$rank_list_3)))
     })
     
     observeEvent(input$continue, {
       removeModal()
     })
     
+    
     # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
       # Check that the user pulled over as many variables to within subjects vars
       # as they said were levels in define
-      if (input$numlvls != length(input$rank_list_2)) {
-        output$errors <- renderText({"You did not drag over the same number of 
+      if (!is.null(input$numlvls2)) {
+        total_lvls = input$numlvls1 * input$numlvls2
+      } else {
+        total_lvls = input$num_lvls1
+      }
+      
+      
+      if (total_lvls != length(input$rank_list_2)) {
+        output$errors <- renderText({"You did not drag over the same number of
                                       variables to the Within Subject Variable
-                                      Levels box as the number of levels you 
+                                      Levels box as the number of levels you
                                       defined at the top of this page. Please
                                       make sure the number of levels you define
-                                      and the number of variables in the Within 
+                                      and the number of variables in the Within
                                       Subject Variable Levels box match before
                                       proceeding."})
+      
+
       } else {
       
         # Calculate the ANOVA and display the results in a table ---------------
         mixed <- length(input$rank_list_3) > 0
-        two_way <- length(input$rank_list_2) > 1
-        # Preparing the data
-        if (two_way == FALSE) {
-          data_prepared <- data() %>%
-            gather(key="within_var", value="dependent_var", input$rank_list_2) %>%
-            convert_as_factor(within_var)
+        two_way <- !is.null(input$ws2)
+        
+        # MIXED ANOVA ----------------------------------------------------------
+        # if (mixed == TRUE) {
+        # 
+        #   data_prepared <- one_way_data(data(), input$rank_list_2)
+        #   between_var <- data_prepared %>% pull(input$rank_list_3) %>% as.factor()
+        #   
+        #   results <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
+        #                          between = c(input$rank_list_3),
+        #                          within = c("within_var"), data=data_prepared, 
+        #                         es="pes")
+        #   
+        #   output$results <- renderPrint({
+        #     return(results)
+        #   })
+        #   
+        #   anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var +
+        #                    between_var + data_prepared$within_var:between_var)
+        #   
+        #   # Calculate chosen statistics ----------------------------------------
+        #   if (!is.null(input$stat)) {
+        # 
+        #     if ("Descriptives" %in% input$stat) {
+        #       descriptives <- two_way_anovaDescriptives(data_prepared, "dependent_var",
+        #                                                 "within_var", input$rank_list_3)
+        #       output$descr <- renderTable({
+        #         descriptives
+        #       })
+        #     } else {
+        #       descriptives <- "Not Calculated"
+        #     }
+        #     
+        #     if ("Homogeneity of variance test" %in% input$stat) {
+        #       levene <- leveneTest(anova_lm, center=mean)
+        #         output$levene <- renderPrint({
+        #           levene
+        #         })
+        #     } else {
+        #       levene <- "Not Calculated"
+        #     }
+        #   }
+        #   # Calculate effect sizes ---------------------------------------------
+        #   if (input$es == TRUE) {
+        #     esResults <- etaSquared(anova_lm)
+        #     output$esResults <- renderTable({
+        #       esResults
+        #     })
+        #   } else {
+        #     esResults <- "Not Calculated"
+        #   }
+        #   # Conduct Post Hoc Tests ---------------------------------------------
+        #   if (!is.null(input$eva)) {
+        #     posthoc <- two_way_posthoc(data_prepared, "dependent_var", 
+        #                                input$postHocVars, input$eva)
+        #     output$phTests <- renderPrint({
+        #       posthoc
+        #     })
+        # 
+        #   } else {
+        #     posthoc <- "Not Calculated"
+        #   }
+        #   
+        #   # Calculate EM Means -------------------------------------------------
+        #   if (!is.null(input$EMVars)) {
+        #     emmeans <- uniEMCalc(input$EMVars, input$ciadj, anova_lm, 
+        #                          data_prepared$within_var, 
+        #                          data_prepared$between_var)
+        #     
+        #     output$emResults <- renderPrint({
+        #       emmeans
+        #     })
+        #   } else {
+        #     emmeans <- "Not Calculated"
+        #   }
+        #   
+        # # ONE WAY WITHIN SUBJECTS ANOVA ----------------------------------------
+        # } else if (two_way == FALSE) {
+        #   data_prepared <- one_way_data(data(), input$rank_list_2)
+        # 
+        #   results <- one_way_within(data_prepared, input$es)
+        #   
+        #   anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var)
+        #   
+        #   output$results <- renderPrint({
+        #     results
+        #   })
+        #   
+        #   # Calculate chosen statistics ----------------------------------------
+        #   if (!is.null(input$stat)) {
+        #     
+        #     if ("Descriptives" %in% input$stat) {
+        #       descriptives <- anovaDescriptives(as.data.frame(data_prepared), "dependent_var",
+        #                                         "within_var")
+        #       output$descr <- renderTable({
+        #         descriptives
+        #       })
+        #     } else {
+        #       descriptives <- "Not Calculated"
+        #     }
+        #   }
+        # 
+        #   
+        #   if (!is.null(input$eva)) {
+        #     
+        #     posthoc <- postHocCalc(input$eva, data_prepared$dependent_var, 
+        #                            data_prepared$within_var, 0.95)
+        #     output$phTests <- renderPrint({
+        #       posthoc
+        #     })
+        #   } else {
+        #     posthoc <- "Not Calculated"
+        #   }
+        #   
+        #   emmeans <- emmeans(anova_lm, specs= ~ data_prepared$within_var)
+        #   output$emResults <- renderPrint({
+        #     emmeans
+        #   })
+        #   
+        # 
+        # # TWO WAY WITHIN SUBJECTS ANOVA ----------------------------------------
+        # } else {
+
+          data_prepared <- two_way_data(data(), c(input$ws1), input$numlvls1, c(input$ws2),
+                                        input$numlvls2)
+
           
-          within_var <- data_prepared %>% pull("within_var")
-        } else {
-          data_prepared <- data() %>%
-            gather(key="within_var1", value="dependent_var1", input$rank_list_2[1]) %>%
-            convert_as_factor(within_var1)
+          results <- aov_ez(colnames(data_prepared)[1], "dependent_var",
+                            within = c(input$ws1, input$ws2), data=data_prepared)
           
-          data_prepared <- data_prepared() %>%
-            gather(key="within_var2", value="dependent_var2", input$rank_list_2[2]) %>%
-            convert_as_factor(within_var2)
-          
-          within_var <- data_prepared %>% pull("within_var1")
-          
-          within_var2 <- data_prepared %>% pull("within_var2")
-        }
-        
-       
-        if (mixed == FALSE && two_way == FALSE) {
-          anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
-                                 within = c("within_var"), data=data_prepared)
-          all_vars <- within_var
-        } else {
-          # Pulling between subjects var
-          between_var <- as.factor(data_prepared %>% pull(input$rank_list_3))
-          anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
-                                 between = c(input$rank_list_3),
-                                 within = c("within_var"), data=data_prepared)
-          all_vars <- append(within_var, between_var)
-        }
-        
-        
-        output$results <- renderPrint({
-          return(anovaResults)
-        })
-        
-        # Make plots -------------------------------------------------------------
-        if(!is.null(input$errorBars)) {
-          if(is.null(input$ebOptions)) {
-            errorBars <- "mean_ci"
-          } else {
-            errorBars <- "mean_se"
-          }
-        } else {
-          errorBars <- "none"
-        }
-        
-        
-        if (!is.null(input$plotXAxis)) {
-          output$plotResults <- renderPlot({
-            uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, all_vars, input$type, errorBars)
+          factor1 <- data_prepared %>% pull(input$ws1)
+          factor2 <- data_prepared %>% pull(input$ws2)
+          anova_lm <- lm(data_prepared$dependent_var ~ factor1 + factor2 +
+                          factor1:factor2)
+
+          output$results <- renderPrint({
+            return(results)
           })
-        }
-        
-        # Calculate chosen statistics --------------------------------------------
-        if (!is.null(input$stat)) {
-          
-          if ("Descriptives" %in% input$stat) {
-            if (mixed == FALSE) {
-              descriptives <- anovaDescriptives(data_prepared(), "dependent var",
-                                                "within_var")
-            } else {
-              descriptives <- two_way_anovaDescriptives(data_prepared(), "dependent var",
-                                                "within_var", input$rank_list_3)
-            }
-            
-            output$descr <- renderTable({
-              descriptives
-            })
-          } else {
-            descriptives <- "Not Calulated"
-          }
-          
-          if ("Homogeneity of variance test" %in% input$stat) {
-            if (mixed == TRUE) {
-              levene <- leveneTest(anova_lm, center=mean)
-              output$levene <- renderPrint({
-                levene
-            })
-          } else {
-            levene <- "Not Calulated"
-          } 
-          
-        } else {
-            levene <- "Not Calulated"
-        }
-          
-        } else {
-          descriptives <- "Not Calculated"
-          levene <- "Not Calulated"
-          welch <- "Not Calulated"
-        }
-          
-        
-        # Calculate effect sizes -------------------------------------------------
-        esResults <- list()
-        if (input$es == TRUE) {
-          options(es.use_symbols = TRUE)
-          if (is.null(input$rank_list_3)) {
-          output$esResults <- renderTable({
-            return(etaSquared(lm(data_prepared$dependent_var ~ data_prepared$within_var)))
-          })
-          } else {
-            output$esResults <- renderTable({
-              return(etaSquared(lm(data_prepared$dependent_var ~ data_prepared$within_var +
-                                     between_var + data_prepared$within_var:between_var)))
-            })
-          }
-        }
-        
-        # Conduct Post Hoc Tests -------------------------------------------------
-        if (!is.null(input$eva)) {
-          
-          if (is.null(input$rank_list_3)) {
-            output$phTests <- renderPrint({
-              postHocCalc(input$eva, data_prepared$dependent_var, data_prepared$within_var,
-                          0.95)
-            })
-          } else {
-            output$phTests <- renderPrint({
-              test_simple_effects(data_prepared, names(data_prepared$dependent_var), 
-                                  names(data_prepared$within_var), 0.95)
-            })
-          }
-         
-        }
-        
-        # Calculate EM Means -----------------------------------------------------
-        if (!is.null(input$EMVars)) {
-          if (is.null(input$rank_list_3)) {
-            output$emResults <- renderPrint({
-              uniEMCalc(input$EMVars, input$ciadj, lm(data_prepared$dependent_var ~ data_prepared$within_var), 
-                        data_prepared$within_var)
-            })
-          } else {
-            output$emResults <- renderPrint({
-              uniEMCalc(input$EMVars, input$ciadj, 
-                        lm(data_prepared$dependent_var ~ data_prepared$within_var +
-                        between_var + data_prepared$within_var:between_var), 
-                        data_prepared$within_var, between_var)
-            })
-          }
-          
-        }
-        params <- list(descr=descriptives, levene=levene, welch=welch,
-                       anova=anovaResults, n2=esResults, em=emmeans,
-                       posthoc=posthoc, se=se_results)
-        
-        output$report <- generate_report("univariate_report", params)
-        
+
+          # Calculate chosen statistics ----------------------------------------
+        #   if (!is.null(input$stat)) {
+        # 
+        #     if ("Descriptives" %in% input$stat) {
+        #       descriptives <- two_way_anovaDescriptives(data_prepared(), "dependent_var",
+        #                                                 input$w1, input$w2)
+        #       output$descr <- renderTable({
+        #         descriptives
+        #       })
+        #     } else {
+        #       descriptives <- "Not Calculated"
+        #     }
+        #   }
+        # 
+        #   # Calculate effect sizes ---------------------------------------------
+        #   esResults <- list()
+        #   if (input$es == TRUE) {
+        #     options(es.use_symbols = TRUE)
+        #     esResults <- etaSquared(anova_lm)
+        #     output$esResults <- renderTable({
+        #       esResults
+        #     })
+        # 
+        #   } else {
+        #     esResults <- "Not Calculated"
+        #   }
+        #   
+        # 
+        # # }
+        # 
+        # # Make plots -------------------------------------------------------------
+        # if(!is.null(input$errorBars)) {
+        #   if(is.null(input$ebOptions)) {
+        #     errorBars <- "mean_ci"
+        #   } else {
+        #     errorBars <- "mean_se"
+        #   }
+        # } else {
+        #   errorBars <- "none"
+        # }
+        # 
+        # 
+        # if (!is.null(input$plotXAxis)) {
+        #   output$plotResults <- renderPlot({
+        #     uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, all_vars, input$type, errorBars)
+        #   })
+        # }
+
+
+        # params <- list(descr=descriptives, levene=levene,
+        #                anova=anovaResults, n2=esResults, em=emmeans,
+        #                posthoc=posthoc, se=se_results)
+        # 
+        # output$report <- generate_report("univariate_report", params)
+
+
       }
     })
     

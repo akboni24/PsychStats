@@ -50,6 +50,12 @@ correlationUI <- function(id) {
         h3("Covariances"),
         verbatimTextOutput(ns("cov"))
       )
+    ),
+    fluidRow(
+      column(
+        width=12,
+        downloadButton(ns("report"), label = "Generate PDF")
+      )
     )
   )
 }
@@ -110,18 +116,26 @@ correlationServer <- function(id, data) {
       })
       
       if ("Means and standard deviations" %in% input$stats) {
+        descr <- sapply(d, means_and_sd)
         output$descr <- renderPrint({
-          sapply(d, means_and_sd)
+          descr
         })
+      } else {
+        descr <- "Not Calculated"
       }
       
       if ("Covariances" %in% input$stats) {
+        cov <- cov(d)
         output$cov <- renderPrint ({
-          cov(d)
+          cov
         })
+      } else {
+        cov <- "Not Calculated"
       }
 
+      params <- list(descr=descr, results=results, cov=cov)
       
+      output$report <- generate_report("correlation_report", params)
       
       
     })

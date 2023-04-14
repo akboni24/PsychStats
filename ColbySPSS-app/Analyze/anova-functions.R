@@ -4,6 +4,7 @@ library(car)
 library(sortable)
 library(ggpubr)
 library(emmeans)
+library(lsr)
 
 # This file contains all of my helper functions and modals for the ANOVA pages
 
@@ -66,30 +67,6 @@ descr_helper <- function(dep, factor, func) {
 
 stderror <- function(x) sd(x)/sqrt(length(x))
 
-# anovaDescriptives <- function(dep, vars) {
-# 
-#     vars <- lapply(vars, as.factor)
-#     
-#     Factor.Levels <- levels(vars)
-#     append(Factor.Levels, "Total")
-#     
-#     N <- descr_helper(dep, vars, length)
-#     append(N, length(vars))
-#     
-#     Mean <- descr_helper(dep, vars, mean)
-#     append(Mean, mean(dep))
-# 
-#     Std.Dev <- descr_helper(dep, vars, sd)
-#     append(Std.Dev, sd(dep))
-#     
-#     Std.Error <- descr_helper(dep, vars, stderror)
-#     append(Std.Error, stderror(dep))
-#     
-#     df <- data.frame(Factor.Levels, N, Mean, Std.Dev, Std.Error)
-#     
-#     return(df)
-# 
-# }
 
 two_way_anovaDescriptives <- function(data, dep, var1, var2) {
   factor <- as.factor(data %>% pull(var1))
@@ -216,15 +193,17 @@ uniPostHocModal <- function(input, output, session, factors) {
     bucket_list(
       header = NULL,
       group_name = "bucket_list_group",
-      orientation = "horizontal",
+      orientation = "vertical",
       add_rank_list(
         text = "Factor(s):",
         labels = factors,
-        input_id = ns("factors")),
+        input_id = ns("factors"),
+        options = sortable_options(group="factors", put="phvars")),
       add_rank_list(
         text = "Post Hoc Tests for: ",
         labels = NULL,
-        input_id = ns("postHocVars")
+        input_id = ns("postHocVars"),
+        options = sortable_options(group="phvars")
       )),
     radioButtons(ns("eva"), label = "Equal Variances Assumed", 
                        c("LSD", "Bonferroni", "Tukey's HSD")),
@@ -291,7 +270,7 @@ uniEMCalc <- function(vars, ciAdj, model, col2, col3) {
   }
   if (length(vars) > 3) {
     return(emmeans(model, specs = pairwise ~ col2:col3))
-  }
+  } 
 }
 
 # Helper Functions for Test for Simple Effects ---------------------------------
@@ -311,4 +290,81 @@ test_simple_effects <- function(anova_data, x, y, sefactor) {
   dfs <- split(anova_data, sefactor)
   se_results <- lapply(dfs, anova_se, factor=x, dep=y)
 }
+
+
+# Functions for One Way Within Subjects ANOVA ----------------------------------
+one_way_data <- function(data, within) {
   
+  data_prepared <- data %>%
+    gather(key="within_var", value="dependent_var", within) %>%
+    convert_as_factor(within_var)
+}
+
+one_way_within <- function(data_prepared, effectSizes) {
+  
+  if (effectSizes == TRUE) {
+    anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
+                           within = c("within_var"), data=data_prepared, es="pes")
+  } else {
+    anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
+                           within = c("within_var"), data=data_prepared)
+  }
+  
+  anovaResults
+  
+}
+
+
+two_way_data <- function(data, factor1, num_lvls1, factor2, num_lvls2) {
+  p_id <- colnames(data)[1]
+  key <- paste(factor1, factor2, sep="_")
+  num_p <- nrow(data)
+  num_times <- num_lvls1 * num_lvls2
+  long_data <- data %>% gather(key=key, value="dependent_var", 
+                               -p_id) %>%
+    separate(col=key,
+             into = c(factor1, factor2),
+             sep = -1) %>%
+    arrange(p_id, factor1, factor2)
+  
+  f1 <- rep(0:(num_lvls1 - 1), times = 1, each = num_p * num_lvls2)
+  f2 <- rep(0:(num_lvls2 - 1), times = num_lvls1, each = num_p)
+  
+  long_data[, 2] = as.factor(f1)
+  long_data[, 3] = as.factor(f2)
+  
+  return(long_data)
+}
+
+
+two_way_posthoc <- function(data, dep, vars, eva) {
+  #' Function for conducting post hoc tests for two way ANOVA
+  #' 
+  #' Arguments:
+  #' ----------
+  #' data: df. Data for the ANOVA
+  #' dep: str. Name of the dependent variable
+  #' vars: list. List of variables to conduct post hoc tests on
+  #' eva: str. Either "Bonferroni", "LSD", or "Tukey's HSD"
+  #' 
+  #' Returns:
+  #' ---------
+  #' posthoc. Object of class "pairwise.htest" or tibble data frame for HSD
+  # ------------------------------------------------------------------------------
+    dep_var <- data %>% pull(dep)
+    if (len(vars) > 1) {
+      
+      var1 <- data %>% pull(vars[1])
+      var2 <- data %>% pull(vars[2])
+      posthoc <- uniPostHocCalc(eva, dep_var, var1, var2, 0.95)
+      
+    } else {
+      
+      var1 <- data %>% pull(vars)
+      posthoc <- postHocCalc(input$eva, dep_var, var1, 0.95)
+
+    } 
+    
+    posthoc
+  
+}
