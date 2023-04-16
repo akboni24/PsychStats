@@ -139,7 +139,7 @@ uniPlotsModal <- function(input, output, session, vars) {
     fluidRow(
       bucket_list(
         header = NULL,
-        group_name = "bucket_list_group",
+        group_name = "plots",
         orientation = "horizontal",
         add_rank_list(
           text = "Factors:",
@@ -192,7 +192,7 @@ uniPostHocModal <- function(input, output, session, factors) {
     title = "Univariate: Post Hoc Multiple Comparisons for Observed Means",
     bucket_list(
       header = NULL,
-      group_name = "bucket_list_group",
+      group_name = "posthoc",
       orientation = "vertical",
       add_rank_list(
         text = "Factor(s):",
@@ -237,16 +237,18 @@ uniEMModal <- function(input, output, session, factors) {
     title = "Univariate: Estimated Marginal Means",
     bucket_list(
       header = NULL,
-      group_name = "bucket_list_group",
-      orientation = "horizontal",
+      group_name = "emmeans",
+      orientation = "vertical",
       add_rank_list(
         text = "Factor(s) and Factor Interactions:",
         labels = listOfVars,
-        input_id = ns("EMfactors")),
+        input_id = ns("EMfactors"),
+        options = sortable_options(group="vars", put="em")),
       add_rank_list(
         text = "Display Means for: ",
         labels = NULL,
-        input_id = ns("EMVars")
+        input_id = ns("EMVars"),
+        options = sortable_options(group="em")
       )),
     checkboxGroupInput(ns("cme"), label = NULL, c("Compare main effects", 
                                                 "Compare simple main effects")),
@@ -352,7 +354,7 @@ two_way_posthoc <- function(data, dep, vars, eva) {
   #' posthoc. Object of class "pairwise.htest" or tibble data frame for HSD
   # ------------------------------------------------------------------------------
     dep_var <- data %>% pull(dep)
-    if (len(vars) > 1) {
+    if (length(vars) > 1) {
       
       var1 <- data %>% pull(vars[1])
       var2 <- data %>% pull(vars[2])
@@ -361,7 +363,7 @@ two_way_posthoc <- function(data, dep, vars, eva) {
     } else {
       
       var1 <- data %>% pull(vars)
-      posthoc <- postHocCalc(input$eva, dep_var, var1, 0.95)
+      posthoc <- postHocCalc(eva, dep_var, var1, 0.95)
 
     } 
     

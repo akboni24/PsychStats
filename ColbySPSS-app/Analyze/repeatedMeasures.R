@@ -73,13 +73,28 @@ repeatedMeasuresUI <- function(id) {
         h3("ANOVA"),
         verbatimTextOutput(ns("results")),
         h3("Effect Sizes"),
-        verbatimTextOutput(ns("esResults")),
+        tableOutput(ns("esResults")),
         h3("Estimated Marginal Means"),
         verbatimTextOutput(ns("emResults")),
         h3("Post Hoc Tests"),
         verbatimTextOutput(ns("phTests")),
         h3("Plots"),
-        plotOutput(ns("plotResults")),
+        plotOutput(ns("plotResults"))
+      )
+    ),
+    fluidRow (
+      column (
+        width = 12,
+        checkboxInput(ns("setest"), "Test for simple effects?", value = FALSE),
+        selectInput(ns("setestvar"), label = "COMPARE", choices = character(0)),
+        selectInput(ns("setestadj"), label = "ADJ", choices = c("Bonferroni", "LSD")),
+        actionButton(ns("seOK"), label = "OK"),
+        verbatimTextOutput(ns("seResults"))
+      )
+    ),
+    fluidRow(
+      column (
+        width = 12,
         downloadButton(ns("report"), label = "Generate PDF")
       )
     )
@@ -124,10 +139,14 @@ repeatedMeasuresServer <- function(id, data) {
   
     
     # Show plot, post hoc, and options modals if selected ----------------------
-    
     observeEvent(input$plots, {
-      showModal(uniPlotsModal(input, output, session, c(input$ws1, input$ws2,
-                                                        input$rank_list_3)))
+      if (!is.null(input$rank_list_3)) {
+        showModal(uniPlotsModal(input, output, session, c(input$ws1, input$rank_list_3)))
+      } else if (input$ws2 != "") {
+        showModal(uniPlotsModal(input, output, session, c(input$ws1, input$ws2)))
+      } else {
+        showModal(uniPlotsModal(input, output, session, c(input$ws1)))
+      }
     })
     
     observeEvent(input$continue, {
@@ -135,7 +154,14 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$posthoc, {
-      showModal(uniPostHocModal(input, output, session, c(input$ws1, input$rank_list_3)))
+      if (!is.null(input$rank_list_3)) {
+        showModal(uniPostHocModal(input, output, session, c(input$ws1, input$rank_list_3)))
+      } else if (input$ws2 != "") {
+        showModal(uniPostHocModal(input, output, session, c(input$ws1, input$ws2)))
+      } else {
+        showModal(uniPostHocModal(input, output, session, c(input$ws1)))
+      }
+      
     }) 
     
     observeEvent(input$continue, {
@@ -151,7 +177,14 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$emmeans, {
-      showModal(uniEMModal(input, output, session, c(input$ws1, input$rank_list_3)))
+      if (input$ws2 != "") {
+        showModal(uniEMModal(input, output, session, c(input$ws1, input$ws2)))
+      } else if (!is.null(input$rank_list_3)) {
+        showModal(uniEMModal(input, output, session, c(input$ws1, input$rank_list_3)))
+      } else {
+        showModal(uniEMModal(input, output, session, c(input$ws1)))
+      }
+      
     })
     
     observeEvent(input$continue, {
@@ -164,10 +197,10 @@ repeatedMeasuresServer <- function(id, data) {
       
       # Check that the user pulled over as many variables to within subjects vars
       # as they said were levels in define
-      if (!is.null(input$numlvls2)) {
+      if (input$numlvls2 > 0) {
         total_lvls = input$numlvls1 * input$numlvls2
       } else {
-        total_lvls = input$num_lvls1
+        total_lvls = input$numlvls1
       }
       
       
@@ -189,129 +222,133 @@ repeatedMeasuresServer <- function(id, data) {
         two_way <- !is.null(input$ws2)
         
         # MIXED ANOVA ----------------------------------------------------------
-        # if (mixed == TRUE) {
-        # 
-        #   data_prepared <- one_way_data(data(), input$rank_list_2)
-        #   between_var <- data_prepared %>% pull(input$rank_list_3) %>% as.factor()
-        #   
-        #   results <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
-        #                          between = c(input$rank_list_3),
-        #                          within = c("within_var"), data=data_prepared, 
-        #                         es="pes")
-        #   
-        #   output$results <- renderPrint({
-        #     return(results)
-        #   })
-        #   
-        #   anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var +
-        #                    between_var + data_prepared$within_var:between_var)
-        #   
-        #   # Calculate chosen statistics ----------------------------------------
-        #   if (!is.null(input$stat)) {
-        # 
-        #     if ("Descriptives" %in% input$stat) {
-        #       descriptives <- two_way_anovaDescriptives(data_prepared, "dependent_var",
-        #                                                 "within_var", input$rank_list_3)
-        #       output$descr <- renderTable({
-        #         descriptives
-        #       })
-        #     } else {
-        #       descriptives <- "Not Calculated"
-        #     }
-        #     
-        #     if ("Homogeneity of variance test" %in% input$stat) {
-        #       levene <- leveneTest(anova_lm, center=mean)
-        #         output$levene <- renderPrint({
-        #           levene
-        #         })
-        #     } else {
-        #       levene <- "Not Calculated"
-        #     }
-        #   }
-        #   # Calculate effect sizes ---------------------------------------------
-        #   if (input$es == TRUE) {
-        #     esResults <- etaSquared(anova_lm)
-        #     output$esResults <- renderTable({
-        #       esResults
-        #     })
-        #   } else {
-        #     esResults <- "Not Calculated"
-        #   }
-        #   # Conduct Post Hoc Tests ---------------------------------------------
-        #   if (!is.null(input$eva)) {
-        #     posthoc <- two_way_posthoc(data_prepared, "dependent_var", 
-        #                                input$postHocVars, input$eva)
-        #     output$phTests <- renderPrint({
-        #       posthoc
-        #     })
-        # 
-        #   } else {
-        #     posthoc <- "Not Calculated"
-        #   }
-        #   
-        #   # Calculate EM Means -------------------------------------------------
-        #   if (!is.null(input$EMVars)) {
-        #     emmeans <- uniEMCalc(input$EMVars, input$ciadj, anova_lm, 
-        #                          data_prepared$within_var, 
-        #                          data_prepared$between_var)
-        #     
-        #     output$emResults <- renderPrint({
-        #       emmeans
-        #     })
-        #   } else {
-        #     emmeans <- "Not Calculated"
-        #   }
-        #   
-        # # ONE WAY WITHIN SUBJECTS ANOVA ----------------------------------------
-        # } else if (two_way == FALSE) {
-        #   data_prepared <- one_way_data(data(), input$rank_list_2)
-        # 
-        #   results <- one_way_within(data_prepared, input$es)
-        #   
-        #   anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var)
-        #   
-        #   output$results <- renderPrint({
-        #     results
-        #   })
-        #   
-        #   # Calculate chosen statistics ----------------------------------------
-        #   if (!is.null(input$stat)) {
-        #     
-        #     if ("Descriptives" %in% input$stat) {
-        #       descriptives <- anovaDescriptives(as.data.frame(data_prepared), "dependent_var",
-        #                                         "within_var")
-        #       output$descr <- renderTable({
-        #         descriptives
-        #       })
-        #     } else {
-        #       descriptives <- "Not Calculated"
-        #     }
-        #   }
-        # 
-        #   
-        #   if (!is.null(input$eva)) {
-        #     
-        #     posthoc <- postHocCalc(input$eva, data_prepared$dependent_var, 
-        #                            data_prepared$within_var, 0.95)
-        #     output$phTests <- renderPrint({
-        #       posthoc
-        #     })
-        #   } else {
-        #     posthoc <- "Not Calculated"
-        #   }
-        #   
-        #   emmeans <- emmeans(anova_lm, specs= ~ data_prepared$within_var)
-        #   output$emResults <- renderPrint({
-        #     emmeans
-        #   })
-        #   
-        # 
-        # # TWO WAY WITHIN SUBJECTS ANOVA ----------------------------------------
-        # } else {
+        if (mixed == TRUE) {
+          
+          data_prepared <- one_way_data(data(), input$rank_list_2)
+          between_var <- data_prepared %>% pull(input$rank_list_3) %>% as.factor()
+          
+          # Update choices for the test for simple effects
+          updateSelectInput(session, "setestvar", 
+                            choices = c(input$ws1, input$rank_list_3))
+
+          results <- aov_ez(colnames(data_prepared)[1], "dependent_var",
+                                 between = c(input$rank_list_3),
+                                 within = c("within_var"), data=data_prepared,
+                                es="pes")
+
+          output$results <- renderPrint({
+            return(results)
+          })
+
+          anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var +
+                           between_var + data_prepared$within_var:between_var)
+
+          # Calculate chosen statistics ----------------------------------------
+          if (!is.null(input$stat)) {
+
+            if ("Descriptives" %in% input$stat) {
+              descriptives <- two_way_anovaDescriptives(data_prepared, "dependent_var",
+                                                        "within_var", input$rank_list_3)
+              output$descr <- renderTable({
+                descriptives
+              })
+            } else {
+              descriptives <- "Not Calculated"
+            }
+
+            if ("Homogeneity of variance test" %in% input$stat) {
+              levene <- leveneTest(anova_lm, center=mean)
+                output$levene <- renderPrint({
+                  levene
+                })
+            } else {
+              levene <- "Not Calculated"
+            }
+          }
+          # Calculate effect sizes ---------------------------------------------
+          if (input$es == TRUE) {
+            esResults <- etaSquared(anova_lm)
+            output$esResults <- renderTable({
+              esResults
+            })
+          } else {
+            esResults <- "Not Calculated"
+          }
+          # Conduct Post Hoc Tests ---------------------------------------------
+          if (!is.null(input$eva)) {
+            posthoc <- two_way_posthoc(data_prepared, "dependent_var",
+                                       input$postHocVars, input$eva)
+            output$phTests <- renderPrint({
+              posthoc
+            })
+
+          } else {
+            posthoc <- "Not Calculated"
+          }
+
+          # Calculate EM Means -------------------------------------------------
+          if (!is.null(input$EMVars)) {
+            emmeans <- emmeans(anova_lm, specs = pairwise ~ within_var:between_var)
+
+            output$emResults <- renderPrint({
+              emmeans
+            })
+          } else {
+            emmeans <- "Not Calculated"
+          }
+
+        # ONE WAY WITHIN SUBJECTS ANOVA ----------------------------------------
+        } else if (two_way == FALSE) {
+          data_prepared <- one_way_data(data(), input$rank_list_2)
+
+          results <- one_way_within(data_prepared, input$es)
+
+          anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var)
+
+          output$results <- renderPrint({
+            results
+          })
+
+          # Calculate chosen statistics ----------------------------------------
+          if (!is.null(input$stat)) {
+
+            if ("Descriptives" %in% input$stat) {
+              descriptives <- anovaDescriptives(as.data.frame(data_prepared), "dependent_var",
+                                                "within_var")
+              output$descr <- renderTable({
+                descriptives
+              })
+            } else {
+              descriptives <- "Not Calculated"
+            }
+          }
+
+
+          if (!is.null(input$eva)) {
+
+            posthoc <- postHocCalc(input$eva, data_prepared$dependent_var,
+                                   data_prepared$within_var, 0.95)
+            output$phTests <- renderPrint({
+              posthoc
+            })
+          } else {
+            posthoc <- "Not Calculated"
+          }
+
+          emmeans <- emmeans(anova_lm, specs= ~ data_prepared$within_var)
+          output$emResults <- renderPrint({
+            emmeans
+          })
+
+
+        # TWO WAY WITHIN SUBJECTS ANOVA ----------------------------------------
+        } else {
 
           data_prepared <- two_way_data(data(), c(input$ws1), input$numlvls1, c(input$ws2),
                                         input$numlvls2)
-
+          
+          # Update selections for test for simple effects
+          updateSelectInput(session, "setestvar", choices = c(input$ws1, input$ws2))
           
           results <- aov_ez(colnames(data_prepared)[1], "dependent_var",
                             within = c(input$ws1, input$ws2), data=data_prepared)
@@ -326,34 +363,89 @@ repeatedMeasuresServer <- function(id, data) {
           })
 
           # Calculate chosen statistics ----------------------------------------
-        #   if (!is.null(input$stat)) {
-        # 
-        #     if ("Descriptives" %in% input$stat) {
-        #       descriptives <- two_way_anovaDescriptives(data_prepared(), "dependent_var",
-        #                                                 input$w1, input$w2)
-        #       output$descr <- renderTable({
-        #         descriptives
-        #       })
-        #     } else {
-        #       descriptives <- "Not Calculated"
-        #     }
-        #   }
-        # 
-        #   # Calculate effect sizes ---------------------------------------------
-        #   esResults <- list()
-        #   if (input$es == TRUE) {
-        #     options(es.use_symbols = TRUE)
-        #     esResults <- etaSquared(anova_lm)
-        #     output$esResults <- renderTable({
-        #       esResults
-        #     })
-        # 
-        #   } else {
-        #     esResults <- "Not Calculated"
-        #   }
-        #   
-        # 
-        # # }
+          if (!is.null(input$stat)) {
+
+            if ("Descriptives" %in% input$stat) {
+              descriptives <- two_way_anovaDescriptives(data_prepared, "dependent_var",
+                                                        input$ws1, input$ws2)
+              output$descr <- renderTable({
+                descriptives
+              })
+            } else {
+              descriptives <- "Not Calculated"
+            }
+          }
+
+          # Calculate effect sizes ---------------------------------------------
+          if (input$es == TRUE) {
+            options(es.use_symbols = TRUE)
+            esResults <- etaSquared(anova_lm)
+            output$esResults <- renderTable({
+              esResults
+            })
+
+          } else {
+            esResults <- "Not Calculated"
+          }
+          # 
+          # Conduct Post Hoc Test ----------------------------------------------
+          if (!is.null(input$eva)) {
+
+            posthoc <- two_way_posthoc(data_prepared, "dependent_var",
+                                   input$postHocVars, input$eva)
+            output$phTests <- renderPrint({
+              posthoc
+            })
+
+          } else {
+            posthoc <- "Not Calculated"
+          }
+
+          # Calculate EM Means -------------------------------------------------
+          if (!is.null(input$EMVars)) {
+            if (!is.null(input$ciadj)) {
+              ciadj <- input$ciadj
+            } else {
+              ciadj <- "none"
+            }
+            emmeans <- emmeans(anova_lm, specs = pairwise ~ factor1:factor2)
+            output$emResults <- renderPrint({
+              emmeans
+            })
+          } else {
+            emmeans <- "Not Calculated"
+          }
+
+
+        }
+        
+        se_results <- "Not Calculated"
+        
+        observeEvent(input$seOK,
+         {
+           req(input$setest)
+           
+           if (mixed == TRUE) {
+             if (is.null(input$setestvar)) {
+               lsm <- emmeans(anova_lm, ~ between_var | data$prepared$within_var)
+             } else {
+               lsm <- emmeans(anova_lm, ~ data_prepared$within_var | between_var)
+             }
+           } else {
+             if (is.null(input$setestvar)) {
+               lsm <- emmeans(anova_lm, ~ factor2 | factor1)
+             } else {
+               lsm <- emmeans(anova_lm, ~ factor1 | factor2)
+             }
+           }
+           
+           
+           se_results <- test(contrast(lsm, "poly"), joint = TRUE)
+           
+          
+           output$seResults <- renderPrint({
+             se_results
+           })
         # 
         # # Make plots -------------------------------------------------------------
         # if(!is.null(input$errorBars)) {
@@ -373,14 +465,13 @@ repeatedMeasuresServer <- function(id, data) {
         #   })
         # }
 
+        params <- list(descr=descriptives, levene=levene,
+                       anova=anovaResults, n2=esResults, em=emmeans,
+                       posthoc=posthoc, se=se_results)
 
-        # params <- list(descr=descriptives, levene=levene,
-        #                anova=anovaResults, n2=esResults, em=emmeans,
-        #                posthoc=posthoc, se=se_results)
-        # 
-        # output$report <- generate_report("univariate_report", params)
+        output$report <- generate_report("repeated_measures_report", params)
 
-
+        })
       }
     })
     

@@ -27,17 +27,23 @@ set_flextable_defaults(fonts_ignore = TRUE)
 
 ### Descriptives
 ```{r, results='asis'}
-for(x in params$descr) print(kable(x))
+if (params$descr != "Not Calculated") {
+  for(x in params$descr) print(kable(x))
+}
 ```
 
 ### Levene's Test for Homogeneity of Variances
 ```{r}
-kable(params$levene)
+if (params$levene != "Not Calculated") {
+  kable(params$levene)
+}
 ```
 
 ### Welch Test
 ```{r}
-kable(params$welch)
+if (params$welch != "Not Calculated") {
+  kable(params$welch)
+}
 ```
 
 ### Analysis of Variance Table
@@ -47,20 +53,28 @@ kable(params$anova)
 
 ### Effect Sizes
 ```{r}
-kable(params$n2)
+if (params$n2 != "Not Calculated") {
+  kable(params$n2)
+}
 ```
 
 ### Estimated Marginal Means
 ```{r}
-summary(params$em)
+if (params$em != "Not Calculated") {
+  summary(params$em)
+}
 ```
 
 ### Pairwise Comparisons
 ```{r}
-params$posthoc
+if (params$posthoc != "Not Calculated") {
+  params$posthoc
+}
 ```
 
 ### Test for Simple Effects
 ```{r}
-params$se
+if (params$se != "Not Calculated") {
+  params$se
+}
 ```
