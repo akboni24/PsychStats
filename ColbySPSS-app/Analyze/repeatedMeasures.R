@@ -3,6 +3,8 @@ library(sortable)
 library(effectsize)
 library(DescTools)
 library(afex)
+library(rstatix)
+library(effectsize)
 source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/anova-functions.R")
 # User Interface ---------------------------------------------------------------
 repeatedMeasuresUI <- function(id) {
@@ -66,6 +68,8 @@ repeatedMeasuresUI <- function(id) {
       column (
         width = 10,
         span(textOutput(ns("errors")), style="color:red"),
+        tableOutput(ns("data")),
+        textOutput(ns("datawarning")),
         h3("Descriptive Statistics"),
         tableOutput(ns("descr")),
         h3("Levene's Test for Homogeneity of Variances"),
@@ -154,10 +158,10 @@ repeatedMeasuresServer <- function(id, data) {
     })
     
     observeEvent(input$posthoc, {
-      if (!is.null(input$rank_list_3)) {
-        showModal(uniPostHocModal(input, output, session, c(input$ws1, input$rank_list_3)))
-      } else if (input$ws2 != "") {
+      if (input$ws2 != "") {
         showModal(uniPostHocModal(input, output, session, c(input$ws1, input$ws2)))
+      } else if (!is.null(input$rank_list_3)) {
+        showModal(uniPostHocModal(input, output, session, c(input$ws1, input$rank_list_3)))
       } else {
         showModal(uniPostHocModal(input, output, session, c(input$ws1)))
       }
@@ -322,8 +326,11 @@ repeatedMeasuresServer <- function(id, data) {
           data_prepared <- one_way_data(data(), input$rank_list_2)
 
           results <- one_way_within(data_prepared, input$es)
+          
+          p_id <- data_prepared %>% pull(1)
 
-          anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var)
+          anova_lm <- lmer(data_prepared$dependent_var ~ data_prepared$within_var 
+                         + (1 | p_id))
 
           output$results <- renderPrint({
             summary(results)
@@ -341,6 +348,8 @@ repeatedMeasuresServer <- function(id, data) {
             } else {
               descriptives <- "Not Calculated"
             }
+          } else {
+            descriptives <- "Not Calculated"
           }
           levene <- "Not Calculated"
 
@@ -362,7 +371,7 @@ repeatedMeasuresServer <- function(id, data) {
           
           # Calculate effect sizes ---------------------------------------------
           if (input$es == TRUE) {
-            esResults <- etaSquared(anova_lm, type=3)
+            esResults <- eta_squared(anova_lm, partial=TRUE)
             output$esResults <- renderTable({
               esResults
             })
@@ -373,9 +382,16 @@ repeatedMeasuresServer <- function(id, data) {
 
         # TWO WAY WITHIN SUBJECTS ANOVA ----------------------------------------
         } else {
+          
+      
+          
 
-          data_prepared <- two_way_data(data(), c(input$ws1), input$numlvls1, c(input$ws2),
-                                        input$numlvls2)
+          data_prepared <- two_way_data(data(), c(input$ws1), input$numlvls1, 
+                                        c(input$ws2), input$numlvls2)
+          
+          output$data <- renderTable({
+            data_prepared
+          })
           
           # Update selections for test for simple effects
           updateSelectInput(session, "setestvar", choices = c(input$ws1, input$ws2))
@@ -383,10 +399,11 @@ repeatedMeasuresServer <- function(id, data) {
           results <- aov_ez(colnames(data_prepared)[1], "dependent_var",
                             within = c(input$ws1, input$ws2), data=data_prepared)
           
-          factor1 <- data_prepared %>% pull(input$ws1)
-          factor2 <- data_prepared %>% pull(input$ws2)
-          anova_lm <- lm(data_prepared$dependent_var ~ factor1 + factor2 +
-                          factor1:factor2)
+          factor1 <- data_prepared %>% pull(input$ws1) %>% as.factor()
+          factor2 <- data_prepared %>% pull(input$ws2) %>% as.factor()
+          p_id <- data_prepared %>% pull(1)
+          anova_lm <- lmer(data_prepared$dependent_var ~ factor1 * factor2 +
+                          (1 | p_id))
 
           output$results <- renderPrint({
             summary(results)
@@ -404,6 +421,8 @@ repeatedMeasuresServer <- function(id, data) {
             } else {
               descriptives <- "Not Calculated"
             }
+          } else {
+            descriptives <- "Not Calculated"
           }
           
           levene <- "Not Calculated"
@@ -411,7 +430,7 @@ repeatedMeasuresServer <- function(id, data) {
           # Calculate effect sizes ---------------------------------------------
           if (input$es == TRUE) {
             options(es.use_symbols = TRUE)
-            esResults <- etaSquared(anova_lm)
+            esResults <- eta_squared(anova_lm, partial=TRUE)
             output$esResults <- renderTable({
               esResults
             })
@@ -478,7 +497,7 @@ repeatedMeasuresServer <- function(id, data) {
            
            if (mixed == TRUE) {
              if (is.null(input$setestvar)) {
-               lsm <- emmeans(anova_lm, ~ between_var | data$prepared$within_var)
+               lsm <- emmeans(anova_lm, ~ between_var | data_prepared$within_var)
              } else {
                lsm <- emmeans(anova_lm, ~ data_prepared$within_var | between_var)
              }

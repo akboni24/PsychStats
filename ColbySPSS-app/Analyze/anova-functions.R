@@ -333,7 +333,7 @@ two_way_data <- function(data, factor1, num_lvls1, factor2, num_lvls2) {
   
   f1 <- rep(0:(num_lvls1 - 1), times = 1, each = num_p * num_lvls2)
   f2 <- rep(0:(num_lvls2 - 1), times = num_lvls1, each = num_p)
-  
+
   long_data[, 2] = as.factor(f1)
   long_data[, 3] = as.factor(f2)
   

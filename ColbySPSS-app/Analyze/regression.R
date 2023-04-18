@@ -49,7 +49,18 @@ regressionUI <- function(id) {
         h3("Linear Regression Model"),
         verbatimTextOutput(ns("linreg")),
         h3("Statistics"),
-        verbatimTextOutput(ns("stats"))
+        h5("Confidence Intervals"),
+        verbatimTextOutput(ns("ci")),
+        h5("Covariance Matrix"),
+        verbatimTextOutput(ns("covariances")),
+        h5("Collinearity Diagnostics"),
+        verbatimTextOutput(ns("coll"))
+      )
+    ),
+    fluidRow(
+      column(
+        width=12,
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
   )
@@ -140,39 +151,57 @@ regressionServer <- function(id, data) {
         
         # Calculate and display descriptives -----------------------------------
         if ("Descriptives" %in% input$other) {
+          descriptives <- summary(d)
           output$descr <- renderPrint({
-            summary(d)
+            descriptives
           })
+        } else {
+          descriptives <- "Not Calculated"
         }
         
         # Calculate and display partial correlations ---------------------------
         if ("Part and partial correlations" %in% input$other) {
+          pcor <- pcor(d)
           output$corr <- renderPrint ({
-            pcor(d)
+            pcor
           })
+        } else {
+          pcor <- "Not Calculated"
         }
         
         # Calculate and display chose statistics -------------------------------
-        stats_results <- list()
         if ("Confidence Intervals (95%)" %in% input$regcoef) {
-          stats_results <- append(stats_results, "Confidence Intervals")
-          stats_results <- append(stats_results, confint(model))
+          confints <- confint(model)
+          output$ci <- renderPrint({
+            confints
+          })
+
+        } else {
+          confints <- "Not Calculated"
         }
         
-        if ("Covariance Matrix" %in% input$regcoef) {
-          stats_results <- append(stats_results, "Covariance Matrix")
-          stats_results <- append(stats_results, cov(d))
+        if ("Covariance matrix" %in% input$regcoef) {
+          covs <- cov(d)
+          output$covariances <- renderPrint({
+            covs
+          })
+        } else {
+          covs <- "Not Calculated"
         }
         
-        if ("Collinearity diagnostics" %in% input$regcoef) {
-          stats_results <- append(stats_results, "Collinearity Diagnostics")
-          stats_results <- append(stats_results, vif(model))
+        if ("Collinearity diagnostics" %in% input$other) {
+          colls <- vif(model)
+          output$coll <- renderPrint({
+            colls
+          })
+        } else {
+          colls <- "Not Calculated"
         }
+      
+        params <- list(descr=descriptives, reg=toPrint, pcor=pcor, ci=confints, 
+                       cov=covs, coll=colls)
         
-        
-        output$stats <- renderPrint ({
-          stats_results
-        })
+        output$report <- generate_report("regression_report", params)
         
       }
       

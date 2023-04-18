@@ -34,8 +34,6 @@ correlationUI <- function(id) {
         checkboxGroupInput(ns("coef"), label="Correlation Coefficients: ", 
                            c("Pearson", "Spearman"),
                            selected="Pearson"),
-        radioButtons(ns("sig"), label="Test of Significance", 
-                     c("Two-tailed", "One-tailed")),
         # Should hide the OK button until the user has moved at least one variable....
         actionButton(ns("ok"), "OK")
       )

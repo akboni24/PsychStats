@@ -1,0 +1,61 @@
+---
+title: "Regression"
+output: pdf_document
+params:
+  descr: NA
+  reg: NA
+  pcor: NA
+  ci: NA
+  cov: NA
+  coll: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
+library(shiny)
+library(dplyr)
+library(knitr)
+library(rempsyc)
+library(flextable)
+set_flextable_defaults(fonts_ignore = TRUE)
+```
+
+## Regression
+
+### Descriptive Statistics
+
+```{r}
+kable(params$descr)
+```
+
+### Linear Model
+
+```{r}
+params$reg
+```
+
+
+### Part and Partial Correlations
+
+```{r}
+params$pcor
+```
+
+### Confidence Intervals
+
+```{r}
+params$ci
+```
+
+### Covariances
+
+```{r}
+params$cov
+```
+
+### Collinearity Diagnostics
+
+```{r}
+params$coll
+```
