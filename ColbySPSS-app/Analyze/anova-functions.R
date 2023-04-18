@@ -300,6 +300,8 @@ one_way_data <- function(data, within) {
   data_prepared <- data %>%
     gather(key="within_var", value="dependent_var", within) %>%
     convert_as_factor(within_var)
+  
+  data_prepared
 }
 
 one_way_within <- function(data_prepared, effectSizes) {

@@ -219,7 +219,7 @@ repeatedMeasuresServer <- function(id, data) {
       
         # Calculate the ANOVA and display the results in a table ---------------
         mixed <- length(input$rank_list_3) > 0
-        two_way <- !is.null(input$ws2)
+        two_way <- input$ws2 != ""
         
         # MIXED ANOVA ----------------------------------------------------------
         if (mixed == TRUE) {
@@ -237,7 +237,7 @@ repeatedMeasuresServer <- function(id, data) {
                                 es="pes")
 
           output$results <- renderPrint({
-            return(results)
+            summary(results)
           })
 
           anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var +
@@ -296,9 +296,29 @@ repeatedMeasuresServer <- function(id, data) {
           } else {
             emmeans <- "Not Calculated"
           }
+          
+          # Make plots ---------------------------------------------------------
+          if(!is.null(input$errorBars)) {
+            if(is.null(input$ebOptions)) {
+              errorBars <- "mean_ci"
+            } else {
+              errorBars <- "mean_se"
+            }
+          } else {
+            errorBars <- "none"
+          }
+          
+          all_vars <- c(input$ws1, input$rank_list_3)
+          if (!is.null(input$plotXAxis)) {
+            output$plotResults <- renderPlot({
+              uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, 
+                          all_vars, input$type, errorBars)
+            })
+          }
 
         # ONE WAY WITHIN SUBJECTS ANOVA ----------------------------------------
         } else if (two_way == FALSE) {
+          
           data_prepared <- one_way_data(data(), input$rank_list_2)
 
           results <- one_way_within(data_prepared, input$es)
@@ -306,7 +326,7 @@ repeatedMeasuresServer <- function(id, data) {
           anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var)
 
           output$results <- renderPrint({
-            results
+            summary(results)
           })
 
           # Calculate chosen statistics ----------------------------------------
@@ -322,7 +342,7 @@ repeatedMeasuresServer <- function(id, data) {
               descriptives <- "Not Calculated"
             }
           }
-
+          levene <- "Not Calculated"
 
           if (!is.null(input$eva)) {
 
@@ -334,11 +354,21 @@ repeatedMeasuresServer <- function(id, data) {
           } else {
             posthoc <- "Not Calculated"
           }
-
-          emmeans <- emmeans(anova_lm, specs= ~ data_prepared$within_var)
+          
+          emmeans <- emmeans(anova_lm, specs= ~ within_var)
           output$emResults <- renderPrint({
             emmeans
           })
+          
+          # Calculate effect sizes ---------------------------------------------
+          if (input$es == TRUE) {
+            esResults <- etaSquared(anova_lm, type=3)
+            output$esResults <- renderTable({
+              esResults
+            })
+          } else {
+            esResults <- "Not Calculated"
+          }
 
 
         # TWO WAY WITHIN SUBJECTS ANOVA ----------------------------------------
@@ -359,7 +389,7 @@ repeatedMeasuresServer <- function(id, data) {
                           factor1:factor2)
 
           output$results <- renderPrint({
-            return(results)
+            summary(results)
           })
 
           # Calculate chosen statistics ----------------------------------------
@@ -375,6 +405,8 @@ repeatedMeasuresServer <- function(id, data) {
               descriptives <- "Not Calculated"
             }
           }
+          
+          levene <- "Not Calculated"
 
           # Calculate effect sizes ---------------------------------------------
           if (input$es == TRUE) {
@@ -415,6 +447,25 @@ repeatedMeasuresServer <- function(id, data) {
           } else {
             emmeans <- "Not Calculated"
           }
+          
+          # Make plots -------------------------------------------------------------
+          if(!is.null(input$errorBars)) {
+            if(is.null(input$ebOptions)) {
+              errorBars <- "mean_ci"
+            } else {
+              errorBars <- "mean_se"
+            }
+          } else {
+            errorBars <- "none"
+          }
+          
+          all_vars <- c(input$ws1, input$ws2)
+          if (!is.null(input$plotXAxis)) {
+            output$plotResults <- renderPlot({
+              uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, 
+                          all_vars, input$type, errorBars)
+            })
+          }
 
 
         }
@@ -446,32 +497,21 @@ repeatedMeasuresServer <- function(id, data) {
            output$seResults <- renderPrint({
              se_results
            })
-        # 
-        # # Make plots -------------------------------------------------------------
-        # if(!is.null(input$errorBars)) {
-        #   if(is.null(input$ebOptions)) {
-        #     errorBars <- "mean_ci"
-        #   } else {
-        #     errorBars <- "mean_se"
-        #   }
-        # } else {
-        #   errorBars <- "none"
-        # }
-        # 
-        # 
-        # if (!is.null(input$plotXAxis)) {
-        #   output$plotResults <- renderPlot({
-        #     uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, all_vars, input$type, errorBars)
-        #   })
-        # }
+
 
         params <- list(descr=descriptives, levene=levene,
-                       anova=anovaResults, n2=esResults, em=emmeans,
+                       anova=results, n2=esResults, em=emmeans,
                        posthoc=posthoc, se=se_results)
 
         output$report <- generate_report("repeated_measures_report", params)
 
         })
+        
+        params <- list(descr=descriptives, levene=levene,
+                       anova=results, n2=esResults, em=emmeans,
+                       posthoc=posthoc, se=se_results)
+        
+        output$report <- generate_report("repeated_measures_report", params)
       }
     })
     

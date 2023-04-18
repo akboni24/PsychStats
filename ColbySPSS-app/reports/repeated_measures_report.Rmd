@@ -4,7 +4,6 @@ output: pdf_document
 params:
   descr: NA
   levene: NA
-  welch: NA
   anova: NA
   n2: NA
   em: NA
@@ -27,54 +26,36 @@ set_flextable_defaults(fonts_ignore = TRUE)
 
 ### Descriptives
 ```{r, results='asis'}
-if (params$descr != "Not Calculated") {
-  for(x in params$descr) print(kable(x))
-}
+kable(params$descr)
 ```
 
 ### Levene's Test for Homogeneity of Variances
 ```{r}
-if (params$levene != "Not Calculated") {
-  kable(params$levene)
-}
+kable(params$levene)
 ```
 
-### Welch Test
-```{r}
-if (params$welch != "Not Calculated") {
-  kable(params$welch)
-}
-```
 
 ### Analysis of Variance Table
 ```{r}
-kable(params$anova)
+summary(params$anova)
 ```
 
 ### Effect Sizes
 ```{r}
-if (params$n2 != "Not Calculated") {
-  kable(params$n2)
-}
+kable(params$n2)
 ```
 
 ### Estimated Marginal Means
 ```{r}
-if (params$em != "Not Calculated") {
-  summary(params$em)
-}
+summary(params$em)
 ```
 
 ### Pairwise Comparisons
 ```{r}
-if (params$posthoc != "Not Calculated") {
-  params$posthoc
-}
+params$posthoc
 ```
 
 ### Test for Simple Effects
 ```{r}
-if (params$se != "Not Calculated") {
-  params$se
-}
+params$se
 ```
