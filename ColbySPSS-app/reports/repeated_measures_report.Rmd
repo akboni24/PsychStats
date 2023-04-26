@@ -26,7 +26,7 @@ set_flextable_defaults(fonts_ignore = TRUE)
 
 ### Descriptives
 ```{r, results='asis'}
-kable(params$descr)
+for(x in params$descr) print(kable(x))
 ```
 
 ### Levene's Test for Homogeneity of Variances

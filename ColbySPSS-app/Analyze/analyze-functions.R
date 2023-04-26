@@ -104,10 +104,33 @@ statsModal <- function(input, output, session) {
   # Create the pop-up window
   modalDialog(
     title = "Frequencies: Statistics",
-    checkboxGroupInput(ns("percValues"), label = "Percentile Values", c("Quartiles", "Cut points for 10 equal groups", "Percentiles")),
-    checkboxGroupInput(ns("centen"), label = "Central Tendency", c("Mean", "Median", "Mode", "Sum")),
-    checkboxGroupInput(ns("disp"), label = "Dispersion", c("Std. Deviation", "Variance", "Range", "Minimum", "Maximum")),
+    checkboxGroupInput(ns("percValues"), label = "Percentile Values", c("Quartiles", 
+                      "Cut points for 10 equal groups", "Percentiles")),
+    checkboxGroupInput(ns("centen"), label = "Central Tendency", c("Mean", 
+                      "Median", "Mode", "Sum")),
+    checkboxGroupInput(ns("disp"), label = "Dispersion", c("Std. Deviation", 
+                                  "Variance", "Range", "Minimum", "Maximum")),
     checkboxGroupInput(ns("dist"), label = "Distribution", c("Skewness", "Kurtosis")),
+    footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
+  )
+  
+}
+
+# Statistics Modal Function ----------------------------------------------------
+freqChartsModal <- function(input, output, session) {
+  #' Creates a modal (pop-up window) that asks for user input of what stats they want to be calculated
+  #' Arguments: Shiny arguments input, output, and session
+  #' ---------------------------------------------------------------------------
+  ns <- session$ns
+  # Create the pop-up window
+  modalDialog(
+    title = "Frequencies: Charts",
+    radioButtons(ns("type"), label="Chart Type", c("None", "Bar Charts", 
+                "Pie Charts", "Histograms"), selected = "None"),
+    checkboxInput(ns("normal"), label="Show normal curve on histogram", 
+                  value=FALSE),
+    radioButtons(ns("values"), label="Chart Values", c("Frequencies", "Percentages"),
+                 selected="Frequencies"),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
   )
   

@@ -25,10 +25,17 @@ freqUI <- function(id) {
         # Buttons
         width = 4,
         actionButton(ns("stat"), "Statistics"),
-        actionButton(ns("chart"), "Charts"),
-        actionButton(ns("format"), "Format")
+        actionButton(ns("chart"), "Charts")
       )
     ), 
+    fluidRow(
+      column(
+        width = 10,
+        # Should hide the OK button until the user has moved at least one variable....
+        checkboxInput(ns("freqtables"), label="Display frequency tables", 
+                      value=TRUE)
+      )
+    ),
     fluidRow(
       column(
         width = 10,

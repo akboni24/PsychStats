@@ -295,23 +295,27 @@ test_simple_effects <- function(anova_data, x, y, sefactor) {
 
 
 # Functions for One Way Within Subjects ANOVA ----------------------------------
-one_way_data <- function(data, within) {
+one_way_data <- function(data, within, name, vars) {
+  key=paste(name)
+  new_data <- data %>% dplyr::select(one_of(vars))
+  data_prepared <- new_data %>%
+    gather(key=key, value="dependent_var", within) %>%
+    convert_as_factor(key)
   
-  data_prepared <- data %>%
-    gather(key="within_var", value="dependent_var", within) %>%
-    convert_as_factor(within_var)
+  
+  names(data_prepared)[names(data_prepared) == 'key'] <- name
   
   data_prepared
 }
 
-one_way_within <- function(data_prepared, effectSizes) {
+one_way_within <- function(data_prepared, effectSizes, w_name) {
   
   if (effectSizes == TRUE) {
     anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
-                           within = c("within_var"), data=data_prepared, es="pes")
+                           within = w_name, data=data_prepared, es="pes")
   } else {
     anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
-                           within = c("within_var"), data=data_prepared)
+                           within = w_name, data=data_prepared)
   }
   
   anovaResults
@@ -319,8 +323,10 @@ one_way_within <- function(data_prepared, effectSizes) {
 }
 
 
-two_way_data <- function(data, factor1, num_lvls1, factor2, num_lvls2) {
+two_way_data <- function(data, order, factor1, num_lvls1, factor2, num_lvls2) {
   p_id <- colnames(data)[1]
+  col_order <- c(p_id, order)
+  data <- data[, col_order]
   key <- paste(factor1, factor2, sep="_")
   num_p <- nrow(data)
   num_times <- num_lvls1 * num_lvls2
@@ -339,6 +345,18 @@ two_way_data <- function(data, factor1, num_lvls1, factor2, num_lvls2) {
   
   return(long_data)
 }
+
+data_check <- function(order, factor1, num_lvls1, factor2, num_lvls2) {
+  
+  Factor1 <- rep(0:(num_lvls1 - 1), times = 1, each = num_lvls2)
+  Factor2 <- rep(0:(num_lvls2 - 1), times = num_lvls1)
+  
+  data <- data.frame(Factor1, Factor2, order)
+  colnames(data) <- c(factor1, factor2, "Your.Input")
+  data
+}
+  
+  
 
 
 two_way_posthoc <- function(data, dep, vars, eva) {

@@ -129,7 +129,7 @@ repeatedMeasuresServer <- function(id, data) {
           labels = vars(),
           input_id = ns("rank_list_1")),
         add_rank_list(
-          text = "Within-Subjects Variable 1 Levels: ",
+          text = "Within-Subjects Variable Levels: ",
           labels = NULL,
           input_id = ns("rank_list_2")
         ),
@@ -228,31 +228,36 @@ repeatedMeasuresServer <- function(id, data) {
         # MIXED ANOVA ----------------------------------------------------------
         if (mixed == TRUE) {
           
-          data_prepared <- one_way_data(data(), input$rank_list_2)
+          vars <- c(colnames(data())[1], input$rank_list_2, input$rank_list_3)
+          data_prepared <- one_way_data(data(), input$rank_list_2, name=c(input$ws1),
+                                        vars)
           between_var <- data_prepared %>% pull(input$rank_list_3) %>% as.factor()
-          
+          within_var <- data_prepared %>% pull(input$ws1) %>% as.factor()
+
           # Update choices for the test for simple effects
-          updateSelectInput(session, "setestvar", 
+          updateSelectInput(session, "setestvar",
                             choices = c(input$ws1, input$rank_list_3))
 
           results <- aov_ez(colnames(data_prepared)[1], "dependent_var",
                                  between = c(input$rank_list_3),
-                                 within = c("within_var"), data=data_prepared,
+                                 within = c(input$ws1), data=data_prepared,
                                 es="pes")
 
           output$results <- renderPrint({
             summary(results)
           })
+          
+          p_id <- data_prepared %>% pull(1)
 
-          anova_lm <- lm(data_prepared$dependent_var ~ data_prepared$within_var +
-                           between_var + data_prepared$within_var:between_var)
+          anova_lm <- lmer(data_prepared$dependent_var ~ within_var*between_var
+                             + (1 | p_id))
 
           # Calculate chosen statistics ----------------------------------------
           if (!is.null(input$stat)) {
 
             if ("Descriptives" %in% input$stat) {
               descriptives <- two_way_anovaDescriptives(data_prepared, "dependent_var",
-                                                        "within_var", input$rank_list_3)
+                                                        c(input$ws1), input$rank_list_3)
               output$descr <- renderTable({
                 descriptives
               })
@@ -261,17 +266,21 @@ repeatedMeasuresServer <- function(id, data) {
             }
 
             if ("Homogeneity of variance test" %in% input$stat) {
-              levene <- leveneTest(anova_lm, center=mean)
+              levene <- leveneTest(data_prepared$dependent_var ~ between_var, 
+                                   center=mean)
                 output$levene <- renderPrint({
                   levene
                 })
             } else {
               levene <- "Not Calculated"
             }
+          } else {
+            descriptives <- "Not Calculated"
+            levene <- "Not Calculated"
           }
           # Calculate effect sizes ---------------------------------------------
           if (input$es == TRUE) {
-            esResults <- etaSquared(anova_lm)
+            esResults <- eta_squared(anova_lm, partial=TRUE)
             output$esResults <- renderTable({
               esResults
             })
@@ -293,12 +302,18 @@ repeatedMeasuresServer <- function(id, data) {
           # Calculate EM Means -------------------------------------------------
           if (!is.null(input$EMVars)) {
             emmeans <- emmeans(anova_lm, specs = pairwise ~ within_var:between_var)
+            
+            if (input$ciadj == 1) {
+              emResults <- pairs(emmeans, adjust="None")
+            } else {
+              emResults <- pairs(emmeans, adjust = "bonf")
+            }
 
             output$emResults <- renderPrint({
-              emmeans
+              emResults
             })
           } else {
-            emmeans <- "Not Calculated"
+            emResults <- "Not Calculated"
           }
           
           # Make plots ---------------------------------------------------------
@@ -323,14 +338,14 @@ repeatedMeasuresServer <- function(id, data) {
         # ONE WAY WITHIN SUBJECTS ANOVA ----------------------------------------
         } else if (two_way == FALSE) {
           
-          data_prepared <- one_way_data(data(), input$rank_list_2)
+          data_prepared <- one_way_data(data(), input$rank_list_2, input$ws1)
+          within_var <- data_prepared %>% pull(input$ws1) %>% as.factor()
 
-          results <- one_way_within(data_prepared, input$es)
+          results <- one_way_within(data_prepared, input$es, input$ws1)
           
           p_id <- data_prepared %>% pull(1)
 
-          anova_lm <- lmer(data_prepared$dependent_var ~ data_prepared$within_var 
-                         + (1 | p_id))
+          anova_lm <- lmer(data_prepared$dependent_var ~ within_var + (1 | p_id))
 
           output$results <- renderPrint({
             summary(results)
@@ -341,7 +356,7 @@ repeatedMeasuresServer <- function(id, data) {
 
             if ("Descriptives" %in% input$stat) {
               descriptives <- anovaDescriptives(as.data.frame(data_prepared), "dependent_var",
-                                                "within_var")
+                                                input$ws1)
               output$descr <- renderTable({
                 descriptives
               })
@@ -356,7 +371,7 @@ repeatedMeasuresServer <- function(id, data) {
           if (!is.null(input$eva)) {
 
             posthoc <- postHocCalc(input$eva, data_prepared$dependent_var,
-                                   data_prepared$within_var, 0.95)
+                                   within_var, 0.95)
             output$phTests <- renderPrint({
               posthoc
             })
@@ -364,9 +379,9 @@ repeatedMeasuresServer <- function(id, data) {
             posthoc <- "Not Calculated"
           }
           
-          emmeans <- emmeans(anova_lm, specs= ~ within_var)
+          emResults <- emmeans(anova_lm, specs= ~ within_var)
           output$emResults <- renderPrint({
-            emmeans
+            emResults
           })
           
           # Calculate effect sizes ---------------------------------------------
@@ -383,15 +398,23 @@ repeatedMeasuresServer <- function(id, data) {
         # TWO WAY WITHIN SUBJECTS ANOVA ----------------------------------------
         } else {
           
-      
-          
-
-          data_prepared <- two_way_data(data(), c(input$ws1), input$numlvls1, 
-                                        c(input$ws2), input$numlvls2)
+          check <- data_check(input$rank_list_2, c(input$ws1), input$numlvls1, 
+                              c(input$ws2), input$numlvls2)
           
           output$data <- renderTable({
-            data_prepared
+            check
           })
+          
+          output$datawarning <- renderText({"Make sure that the above mapping
+                                between the levels of both factors and the columns
+                                of your data is correct before continuing. If it
+                                is not, rearrange the columns in the above box
+                                and hit ok again."})
+          
+
+          data_prepared <- two_way_data(data(), input$rank_list_2, c(input$ws1), 
+                                        input$numlvls1, c(input$ws2), input$numlvls2)
+          
           
           # Update selections for test for simple effects
           updateSelectInput(session, "setestvar", choices = c(input$ws1, input$ws2))
@@ -459,12 +482,12 @@ repeatedMeasuresServer <- function(id, data) {
             } else {
               ciadj <- "none"
             }
-            emmeans <- emmeans(anova_lm, specs = pairwise ~ factor1:factor2)
+            emResults <- emmeans(anova_lm, specs = pairwise ~ factor1:factor2)
             output$emResults <- renderPrint({
-              emmeans
+              emResults
             })
           } else {
-            emmeans <- "Not Calculated"
+            emResults <- "Not Calculated"
           }
           
           # Make plots -------------------------------------------------------------
@@ -497,9 +520,9 @@ repeatedMeasuresServer <- function(id, data) {
            
            if (mixed == TRUE) {
              if (is.null(input$setestvar)) {
-               lsm <- emmeans(anova_lm, ~ between_var | data_prepared$within_var)
+               lsm <- emmeans(anova_lm, ~ between_var | within_var)
              } else {
-               lsm <- emmeans(anova_lm, ~ data_prepared$within_var | between_var)
+               lsm <- emmeans(anova_lm, ~ within_var | between_var)
              }
            } else {
              if (is.null(input$setestvar)) {
@@ -519,7 +542,7 @@ repeatedMeasuresServer <- function(id, data) {
 
 
         params <- list(descr=descriptives, levene=levene,
-                       anova=results, n2=esResults, em=emmeans,
+                       anova=results, n2=esResults, em=emResults,
                        posthoc=posthoc, se=se_results)
 
         output$report <- generate_report("repeated_measures_report", params)
@@ -527,9 +550,9 @@ repeatedMeasuresServer <- function(id, data) {
         })
         
         params <- list(descr=descriptives, levene=levene,
-                       anova=results, n2=esResults, em=emmeans,
+                       anova=results, n2=esResults, em=emResults,
                        posthoc=posthoc, se=se_results)
-        
+
         output$report <- generate_report("repeated_measures_report", params)
       }
     })
