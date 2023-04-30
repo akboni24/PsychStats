@@ -77,7 +77,7 @@ repeatedMeasuresUI <- function(id) {
         h3("ANOVA"),
         verbatimTextOutput(ns("results")),
         h3("Effect Sizes"),
-        tableOutput(ns("esResults")),
+        verbatimTextOutput(ns("esResults")),
         h3("Estimated Marginal Means"),
         verbatimTextOutput(ns("emResults")),
         h3("Post Hoc Tests"),
@@ -144,10 +144,10 @@ repeatedMeasuresServer <- function(id, data) {
     
     # Show plot, post hoc, and options modals if selected ----------------------
     observeEvent(input$plots, {
-      if (!is.null(input$rank_list_3)) {
-        showModal(uniPlotsModal(input, output, session, c(input$ws1, input$rank_list_3)))
-      } else if (input$ws2 != "") {
+      if (input$ws2 != "") {
         showModal(uniPlotsModal(input, output, session, c(input$ws1, input$ws2)))
+      } else if (!is.null(input$rank_list_3)) {
+        showModal(uniPlotsModal(input, output, session, c(input$ws1, input$rank_list_3)))
       } else {
         showModal(uniPlotsModal(input, output, session, c(input$ws1)))
       }
@@ -249,8 +249,10 @@ repeatedMeasuresServer <- function(id, data) {
           
           p_id <- data_prepared %>% pull(1)
 
-          anova_lm <- lmer(data_prepared$dependent_var ~ within_var*between_var
-                             + (1 | p_id))
+          anova_lm <- aov_ez(colnames(data_prepared)[1], "dependent_var",
+                             between = c(input$rank_list_3),
+                             within = c(input$ws1), data=data_prepared,
+                             return=c("aov"))
 
           # Calculate chosen statistics ----------------------------------------
           if (!is.null(input$stat)) {
@@ -281,7 +283,7 @@ repeatedMeasuresServer <- function(id, data) {
           # Calculate effect sizes ---------------------------------------------
           if (input$es == TRUE) {
             esResults <- eta_squared(anova_lm, partial=TRUE)
-            output$esResults <- renderTable({
+            output$esResults <- renderPrint({
               esResults
             })
           } else {
@@ -338,7 +340,9 @@ repeatedMeasuresServer <- function(id, data) {
         # ONE WAY WITHIN SUBJECTS ANOVA ----------------------------------------
         } else if (two_way == FALSE) {
           
-          data_prepared <- one_way_data(data(), input$rank_list_2, input$ws1)
+          vars <- c(colnames(data())[1], input$rank_list_2)
+          data_prepared <- one_way_data(data(), input$rank_list_2, input$ws1, 
+                                        vars)
           within_var <- data_prepared %>% pull(input$ws1) %>% as.factor()
 
           results <- one_way_within(data_prepared, input$es, input$ws1)
@@ -355,8 +359,8 @@ repeatedMeasuresServer <- function(id, data) {
           if (!is.null(input$stat)) {
 
             if ("Descriptives" %in% input$stat) {
-              descriptives <- anovaDescriptives(as.data.frame(data_prepared), "dependent_var",
-                                                input$ws1)
+              descriptives <- anovaDescriptives(as.data.frame(data_prepared), 
+                                                "dependent_var", input$ws1)
               output$descr <- renderTable({
                 descriptives
               })
@@ -387,7 +391,7 @@ repeatedMeasuresServer <- function(id, data) {
           # Calculate effect sizes ---------------------------------------------
           if (input$es == TRUE) {
             esResults <- eta_squared(anova_lm, partial=TRUE)
-            output$esResults <- renderTable({
+            output$esResults <- renderPrint({
               esResults
             })
           } else {
@@ -425,8 +429,11 @@ repeatedMeasuresServer <- function(id, data) {
           factor1 <- data_prepared %>% pull(input$ws1) %>% as.factor()
           factor2 <- data_prepared %>% pull(input$ws2) %>% as.factor()
           p_id <- data_prepared %>% pull(1)
-          anova_lm <- lmer(data_prepared$dependent_var ~ factor1 * factor2 +
-                          (1 | p_id))
+          anova_lm <- aov_ez(colnames(data_prepared)[1], "dependent_var",
+                             within = c(input$ws1, input$ws2), data=data_prepared,
+                             return=c("aov"))
+          
+          # return = lm for aov_ez
 
           output$results <- renderPrint({
             summary(results)
@@ -454,7 +461,7 @@ repeatedMeasuresServer <- function(id, data) {
           if (input$es == TRUE) {
             options(es.use_symbols = TRUE)
             esResults <- eta_squared(anova_lm, partial=TRUE)
-            output$esResults <- renderTable({
+            output$esResults <- renderPrint({
               esResults
             })
 
@@ -526,9 +533,9 @@ repeatedMeasuresServer <- function(id, data) {
              }
            } else {
              if (is.null(input$setestvar)) {
-               lsm <- emmeans(anova_lm, ~ factor2 | factor1)
+               lsm <- emmeans(anova_lm, c(input$ws2), by = c(input$ws1))
              } else {
-               lsm <- emmeans(anova_lm, ~ factor1 | factor2)
+               lsm <- emmeans(anova_lm, c(input$ws1), by = c(input$ws2))
              }
            }
            
@@ -549,11 +556,11 @@ repeatedMeasuresServer <- function(id, data) {
 
         })
         
-        params <- list(descr=descriptives, levene=levene,
-                       anova=results, n2=esResults, em=emResults,
-                       posthoc=posthoc, se=se_results)
-
-        output$report <- generate_report("repeated_measures_report", params)
+        # params <- list(descr=descriptives, levene=levene,
+        #                anova=results, n2=esResults, em=emResults,
+        #                posthoc=posthoc, se=se_results)
+        # 
+        # output$report <- generate_report("repeated_measures_report", params)
       }
     })
     

@@ -135,7 +135,7 @@ uniPlotsModal <- function(input, output, session, vars) {
   # ------------------------------------------------------------------------------
   ns <- session$ns
   modalDialog (
-    title = "Univariate: Profile Plots",
+    title = "Profile Plots",
     fluidRow(
       bucket_list(
         header = NULL,
@@ -189,7 +189,7 @@ uniPostHocModal <- function(input, output, session, factors) {
   # ------------------------------------------------------------------------------
   ns <- session$ns
   modalDialog (
-    title = "Univariate: Post Hoc Multiple Comparisons for Observed Means",
+    title = "Post Hoc Multiple Comparisons for Observed Means",
     bucket_list(
       header = NULL,
       group_name = "posthoc",
@@ -234,7 +234,7 @@ uniEMModal <- function(input, output, session, factors) {
   interaction <- paste(factors, collapse = "*")
   listOfVars <- c("OVERALL", factors[1], factors[2], interaction)
   modalDialog (
-    title = "Univariate: Estimated Marginal Means",
+    title = "Estimated Marginal Means",
     bucket_list(
       header = NULL,
       group_name = "emmeans",
@@ -388,5 +388,39 @@ two_way_posthoc <- function(data, dep, vars, eva) {
     } 
     
     posthoc
+}
+
+ci_bound <- function(var, bound="lower") {
+  mean <- mean(var)
+  se <- stderror(var)
+  if (bound == "lower") {
+    ci <- mean - (1.96*se)
+  } else {
+    ci <- mean + (1.96*se)
+  }
+  ci
+}
+
+emmeans_descr <- function(data, dep_name, var_name, levels = FALSE) {
+  
+  dep <- data %>% pull(dep_name)
+  var <- as.factor(data %>% pull(var_name))
+  # If levels is false, calculate the grand mean
+  if (levels == FALSE) {
+    Mean <- mean(var)
+    Std.Error <- stderror(var)
+    Lower.Bound <- Mean - (1.96*Std.Error)
+    Upper.Bound <- Mean + (1.96*Std.Error)
+  } else {     # Otherwise, split factor by levels
+    Mean <- descr_helper(dep, var, mean)
+    Std.Error <- descr_helper(dep, var, stderror)
+    Lower.Bound <- descr_helper(dep, var, ci_bound, bound="lower")
+    Upper.Bound <- descr_helper(dep, var, ci_bound, bound="upper")
+  }
+  
+  df <- data.frame(Mean, Std.Error, Lower.Bound, Upper.Bound)
+  names(df)[1] <- var_name
+  df
   
 }
+
