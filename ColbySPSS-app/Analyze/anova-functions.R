@@ -103,7 +103,6 @@ anovaDescriptives <- function(data, dep_name, vars_name) {
 }
 
 
-
 # Options Calculations for ANOVA -----------------------------------------------
 anovaOptionsCalc <- function(tests, formula, var1, var2, var3 = NULL) {
   #' Calculates the optional statistics for an aov object
@@ -390,37 +389,49 @@ two_way_posthoc <- function(data, dep, vars, eva) {
     posthoc
 }
 
-ci_bound <- function(var, bound="lower") {
+ci_bound_lower <- function(var) {
   mean <- mean(var)
   se <- stderror(var)
-  if (bound == "lower") {
-    ci <- mean - (1.96*se)
-  } else {
-    ci <- mean + (1.96*se)
-  }
+  ci <- mean - (1.96*se)
   ci
 }
 
-emmeans_descr <- function(data, dep_name, var_name, levels = FALSE) {
+ci_bound_upper <- function(var) {
+  mean <- mean(var)
+  se <- stderror(var)
+  ci <- mean + (1.96*se)
+  ci
+}
+
+emmeans_descr <- function(data, dep_name, var_name=NULL, levels = TRUE) {
   
   dep <- data %>% pull(dep_name)
-  var <- as.factor(data %>% pull(var_name))
   # If levels is false, calculate the grand mean
   if (levels == FALSE) {
-    Mean <- mean(var)
-    Std.Error <- stderror(var)
+    Mean <- mean(dep)
+    Std.Error <- stderror(dep)
     Lower.Bound <- Mean - (1.96*Std.Error)
     Upper.Bound <- Mean + (1.96*Std.Error)
+    df <- data.frame(Mean, Std.Error, Lower.Bound, Upper.Bound)
   } else {     # Otherwise, split factor by levels
+    var <- data %>% pull(var_name) %>% as.factor()
+    Factor.Levels <- levels(var)
     Mean <- descr_helper(dep, var, mean)
     Std.Error <- descr_helper(dep, var, stderror)
-    Lower.Bound <- descr_helper(dep, var, ci_bound, bound="lower")
-    Upper.Bound <- descr_helper(dep, var, ci_bound, bound="upper")
+    Lower.Bound <- descr_helper(dep, var, ci_bound_lower)
+    Upper.Bound <- descr_helper(dep, var, ci_bound_upper)
+    df <- data.frame(Factor.Levels, Mean, Std.Error, Lower.Bound, Upper.Bound)
+    names(df)[1] <- var_name
   }
   
-  df <- data.frame(Mean, Std.Error, Lower.Bound, Upper.Bound)
-  names(df)[1] <- var_name
   df
   
+}
+
+two_emmeans <- function(data, dep_name, var_name, split_by) {
+  factor <- as.factor(data %>% pull(split_by))
+  dfs <- split(data, factor)
+  final_dfs <- lapply(dfs, FUN=emmeans_descr, dep_name, var_name)
+  final_dfs
 }
 

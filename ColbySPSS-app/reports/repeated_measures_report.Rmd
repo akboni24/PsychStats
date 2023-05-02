@@ -6,7 +6,13 @@ params:
   levene: NA
   anova: NA
   n2: NA
-  em: NA
+  em1: NA
+  em2: NA
+  em2_tests: NA
+  em3: NA
+  em3_tests: NA
+  em4: NA
+  em4_tests: NA
   posthoc: NA
   se: NA
 ---
@@ -47,7 +53,25 @@ kable(params$n2)
 
 ### Estimated Marginal Means
 ```{r}
-summary(params$em)
+params$em1
+```
+```{r}
+params$em2
+```
+```{r}
+params$em2_tests
+```
+```{r}
+params$em3
+```
+```{r}
+params$em3_tests
+```
+```{r}
+params$em4
+```
+```{r}
+params$em4_tests
 ```
 
 ### Pairwise Comparisons

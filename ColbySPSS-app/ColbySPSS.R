@@ -21,7 +21,7 @@ source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Graphs/scatter.R")
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
   theme = bs_theme(bootswatch = "yeti"),
-  "SPSS-R",
+  "PsychStats",
   selected = "Home",
   # in navBarMenu, will replace the name of the module as the second argument
   tabPanel("Home", 
