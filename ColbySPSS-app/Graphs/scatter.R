@@ -1,9 +1,8 @@
 library(shiny)
 library(sortable)
-library(ggplot2)
+library("ggvis")
 library(dplyr)
-library(ggplot2)
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Graphs/graphs-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Graphs/graphs-functions.R")
 # User Interface ---------------------------------------------------------------
 scatterUI <- function(id) {
   
@@ -35,8 +34,8 @@ scatterUI <- function(id) {
     ),
     fluidRow (
       column (
-        width = 12,
-        plotOutput(ns("plotResults"))
+        width = 10,
+        ggvisOutput(ns("plotResults"))
       )
     )
   )
@@ -104,8 +103,7 @@ scatterServer <- function(id, data) {
       } else {
         sub = ""
       }
-      
-      title <- main %c% "\n" %c% sub
+
       
       if(!is.null(input$foot)) {
         footnote <- input$foot
@@ -115,14 +113,19 @@ scatterServer <- function(id, data) {
       
       
       # Render the plot --------------------------------------------------------
-      output$plotResults <- renderPlot({
-        ggplot(data(), aes(x=x, y=y)) + geom_point() +
-          labs(title=title, caption=footnote) +
-          theme_classic()
-      })
-      
-      
-      
+       plot <-  reactive({
+                    data() %>% 
+                      ggvis(~x, ~y) %>% 
+                      layer_points() %>%
+                      add_axis("x", title = input$rank_list_3) %>%
+                      add_axis("y", title = input$rank_list_2) %>%
+                      add_title(title=main) %>%
+                      add_title(title=sub, subtitle=TRUE) %>%
+                      add_title(title=footnote, footnote=TRUE)
+                      
+                  })
+
+      plot %>% bind_shiny("scat-plotResults")
     
   })
     

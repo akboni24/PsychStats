@@ -3,20 +3,21 @@ library(bslib)
 library(rstatix)
 library(rmarkdown)
 library(knitr)
+library("ggvis")
 
 # here is where I am importing all of my other files - there's a better way to do
 # this, I just haven't gotten it to work yet
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/freq.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/descriptives.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneSampleT.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/indSamplesT.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/pairedSamplesT.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/oneWayANOVA.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/univariate.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/repeatedMeasures.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/regression.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/correlation.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Graphs/scatter.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/freq.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/descriptives.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/oneSampleT.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/indSamplesT.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/pairedSamplesT.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/oneWayANOVA.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/univariate.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/repeatedMeasures.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/regression.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/correlation.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Graphs/scatter.R")
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(
