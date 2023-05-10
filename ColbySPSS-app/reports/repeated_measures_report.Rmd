@@ -6,7 +6,9 @@ params:
   levene: NA
   anova: NA
   n2: NA
+  emo: NA
   em1: NA
+  em1_tests: NA
   em2: NA
   em2_tests: NA
   em3: NA
@@ -14,6 +16,7 @@ params:
   em4: NA
   em4_tests: NA
   posthoc: NA
+  plot: NA
   se: NA
 ---
 
@@ -52,24 +55,38 @@ kable(params$n2)
 ```
 
 ### Estimated Marginal Means
+#### Overall
+```{r}
+params$emo
+```
+#### Within Subjects Factor
 ```{r}
 params$em1
 ```
+```{r}
+params$em1_tests
+```
+#### Between Subjects Factor
 ```{r}
 params$em2
 ```
 ```{r}
 params$em2_tests
 ```
+#### Interaction
+###### Pairwise Comparisons
 ```{r}
 params$em3
 ```
+###### Multivariate Tests
 ```{r}
 params$em3_tests
 ```
+###### Pairwise Comparisons
 ```{r}
 params$em4
 ```
+###### Univariate or Multivariate Tests
 ```{r}
 params$em4_tests
 ```
@@ -77,6 +94,11 @@ params$em4_tests
 ### Pairwise Comparisons
 ```{r}
 params$posthoc
+```
+
+### Plots
+```{r}
+params$plot
 ```
 
 ### Test for Simple Effects

@@ -17,7 +17,7 @@ anovaPostHocModal <- function(input, output, session) {
   modalDialog (
     title = "ANOVA: Post Hoc Multiple Comparisons",
     radioButtons(ns("eva"), label = "Equal Variances Assumed", 
-                       c("LSD", "Bonferroni", "Tukey's HSD")),
+                 c("LSD", "Bonferroni", "Tukey's HSD")),
     footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), 
                                                          "Continue"))
   )
@@ -32,14 +32,14 @@ anovaOptionsModal <- function(input, output, session) {
   modalDialog (
     title = "ANOVA: Options",
     checkboxGroupInput(ns("stat"), label = "Statistics", c("Descriptives", 
-                                "Homogeneity of variance test", "Welch test")),
+                                                           "Homogeneity of variance test", "Welch test")),
     radioButtons(ns("mv"), label = "Missing Values", 
                  choices = list("Exclude cases analysis by analysis" = 1, 
                                 "Exclude cases listwise" = 2), selected = 1),
     numericInput(ns("confint"), label = "Confidence Intervals (Level%)", 
-                                                                value = "0.95"),
+                 value = "0.95"),
     footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), 
-                                                                    "Continue"))
+                                                         "Continue"))
   )
 }
 
@@ -175,7 +175,7 @@ uniMakePlot <- function(df, x, group, dep, type = "Line Chart", errorBars) {
   # ------------------------------------------------------------------------------
   if ("Bar Chart" %in% type) {
     return(ggbarplot(df, x, dep, fill = group, color = group, palette = "Paired", 
-                label = TRUE, position = position_dodge(0.9), add = errorBars))
+                     label = TRUE, position = position_dodge(0.9), add = errorBars))
   } else {
     return(ggline(df, x, y = dep, color = group, add = errorBars))
   }
@@ -205,7 +205,7 @@ uniPostHocModal <- function(input, output, session, factors) {
         options = sortable_options(group="phvars")
       )),
     radioButtons(ns("eva"), label = "Equal Variances Assumed", 
-                       c("LSD", "Bonferroni", "Tukey's HSD")),
+                 c("LSD", "Bonferroni", "Tukey's HSD")),
     footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"),
                                                                  "Continue"))
   )
@@ -250,7 +250,7 @@ uniEMModal <- function(input, output, session, factors) {
         options = sortable_options(group="em")
       )),
     checkboxGroupInput(ns("cme"), label = NULL, c("Compare main effects", 
-                                                "Compare simple main effects")),
+                                                  "Compare simple main effects")),
     selectInput(ns("ciadj"), label = "Confidence interval adjustment", 
                 choices = c("LSD(none)" = 1, "Bonferroni" = 2), selected = 1),
     footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"), 
@@ -338,7 +338,7 @@ two_way_data <- function(data, order, factor1, num_lvls1, factor2, num_lvls2) {
   
   f1 <- rep(0:(num_lvls1 - 1), times = 1, each = num_p * num_lvls2)
   f2 <- rep(0:(num_lvls2 - 1), times = num_lvls1, each = num_p)
-
+  
   long_data[, 2] = as.factor(f1)
   long_data[, 3] = as.factor(f2)
   
@@ -354,8 +354,8 @@ data_check <- function(order, factor1, num_lvls1, factor2, num_lvls2) {
   colnames(data) <- c(factor1, factor2, "Your.Input")
   data
 }
-  
-  
+
+
 
 
 two_way_posthoc <- function(data, dep, vars, eva) {
@@ -372,21 +372,21 @@ two_way_posthoc <- function(data, dep, vars, eva) {
   #' ---------
   #' posthoc. Object of class "pairwise.htest" or tibble data frame for HSD
   # ------------------------------------------------------------------------------
-    dep_var <- data %>% pull(dep)
-    if (length(vars) > 1) {
-      
-      var1 <- data %>% pull(vars[1])
-      var2 <- data %>% pull(vars[2])
-      posthoc <- uniPostHocCalc(eva, dep_var, var1, var2, 0.95)
-      
-    } else {
-      
-      var1 <- data %>% pull(vars)
-      posthoc <- postHocCalc(eva, dep_var, var1, 0.95)
-
-    } 
+  dep_var <- data %>% pull(dep)
+  if (length(vars) > 1) {
     
-    posthoc
+    var1 <- data %>% pull(vars[1])
+    var2 <- data %>% pull(vars[2])
+    posthoc <- uniPostHocCalc(eva, dep_var, var1, var2, 0.95)
+    
+  } else {
+    
+    var1 <- data %>% pull(vars)
+    posthoc <- postHocCalc(eva, dep_var, var1, 0.95)
+    
+  } 
+  
+  posthoc
 }
 
 ci_bound_lower <- function(var) {
@@ -435,3 +435,9 @@ two_emmeans <- function(data, dep_name, var_name, split_by) {
   final_dfs
 }
 
+mixed_levenes <- function(data, dep, between, within) {
+  factor <- as.factor(data %>% pull(within))
+  dfs <- split(data, factor)
+  levenes <- lapply(dfs, FUN=leveneTest, y=dep, group=within)
+  levenes
+}
