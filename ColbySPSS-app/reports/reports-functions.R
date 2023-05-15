@@ -27,7 +27,6 @@ generate_report <- function(name, params) {
                         envir = new.env(parent = globalenv()))
     }
   )
-  
   report
 }
   

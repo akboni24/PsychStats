@@ -54,7 +54,8 @@ repeatedMeasuresUI <- function(id) {
     fluidRow(
       column(
         width = 10,
-        checkboxInput(ns("es"), label = "Estimate effect sizes for overall tests", value=FALSE)
+        checkboxInput(ns("es"), label = "Estimate effect sizes for overall tests", 
+                      value=FALSE)
       )
     ),
     fluidRow(
@@ -119,8 +120,6 @@ repeatedMeasuresServer <- function(id, data) {
     
     # Display the drag and drop buckets ----------------------------------------
     output$sortable <- renderUI({
-      # JUST IMPLEMENT A CHECK THAT WARNS THEM IF THEY HAVENT MAPPED A VARIABLE TO 
-      # EACH FACTOR LEVEL YET
       req(input$define1)
       ns <- NS(id)
       bucket_list(
@@ -308,7 +307,7 @@ repeatedMeasuresServer <- function(id, data) {
           # Calculate EM Means -------------------------------------------------
           if (!is.null(input$EMVars)) {
             if (!is.null(input$ciadj)) {
-              ciadj <- input$ciadj
+              ciadj <- 'bonferroni'
             } else {
               ciadj <- "none"
             }
@@ -330,8 +329,6 @@ repeatedMeasuresServer <- function(id, data) {
                 print(c(input$ws1));
                 print(summary(em_fit1));
                 if ("Compare main effects" %in% input$cme) {
-                  em1_tests <- c(pairs(em_fit1, adjust=ciadj),
-                                 test(em_fit1, adjust=ciadj, joint=TRUE))
                   print(pairs(em_fit1, adjust=ciadj));
                   print(test(em_fit1, adjust=ciadj, joint=TRUE))
                 } else {
@@ -446,213 +443,288 @@ repeatedMeasuresServer <- function(id, data) {
           } else {
             plot <- c()
           }
-        }
+        
         
         # ONE WAY WITHIN SUBJECTS ANOVA ----------------------------------------
-        # } else if (two_way == FALSE) {
-        #   em1 <- c()
-        #   em_fit1 <- c()
-        #   em1_tests <- c()
-        #   em_fit2 <- c()
-        #   em2_tests <- c()
-        #   em_fit3 <- c()
-        #   em_fit4 <- c()
-        #   em3_tests <- c()
-        #   em4_tests <- c()
-        #   vars <- c(colnames(data())[1], input$rank_list_2)
-        #   data_prepared <- one_way_data(data(), input$rank_list_2, input$ws1, 
-        #                                 vars)
-        #   within_var <- data_prepared %>% pull(input$ws1) %>% as.factor()
-        # 
-        #   results <- one_way_within(data_prepared, input$es, input$ws1)
-        #   
-        #   p_id <- data_prepared %>% pull(1)
-        # 
-        #   anova_lm <- lmer(data_prepared$dependent_var ~ within_var + (1 | p_id))
-        # 
-        #   output$results <- renderPrint({
-        #     summary(results)
-        #   })
-        # 
-        #   # Calculate chosen statistics ----------------------------------------
-        #   if (!is.null(input$stat)) {
-        # 
-        #     if ("Descriptives" %in% input$stat) {
-        #       descriptives <- anovaDescriptives(as.data.frame(data_prepared), 
-        #                                         "dependent_var", input$ws1)
-        #       output$descr <- renderTable({
-        #         descriptives
-        #       })
-        #     } else {
-        #       descriptives <- "Not Calculated"
-        #     }
-        #   } else {
-        #     descriptives <- "Not Calculated"
-        #   }
-        #   levene <- "Not Calculated"
-        # 
-        #   
-        #   posthoc <- "Not Calculated"
-        # 
-        #   
-        #   emResults <- emmeans(anova_lm, specs= ~ within_var)
-        #   output$emResults <- renderPrint({
-        #     emResults
-        #   })
-        #   
-        #   # Calculate effect sizes ---------------------------------------------
-        #   if (input$es == TRUE) {
-        #     esResults <- eta_squared(anova_lm, partial=TRUE)
-        #     output$esResults <- renderPrint({
-        #       esResults
-        #     })
-        #   } else {
-        #     esResults <- "Not Calculated"
-        #   }
-        # 
-        # 
-        # # TWO WAY WITHIN SUBJECTS ANOVA ----------------------------------------
-        # } else {
-        #   em1 <- c()
-        #   em_fit1 <- c()
-        #   em1_tests <- c()
-        #   em_fit2 <- c()
-        #   em2_tests <- c()
-        #   em_fit3 <- c()
-        #   em_fit4 <- c()
-        #   em3_tests <- c()
-        #   em4_tests <- c()
-        #   check <- data_check(input$rank_list_2, c(input$ws1), input$numlvls1, 
-        #                       c(input$ws2), input$numlvls2)
-        #   
-        #   output$data <- renderTable({
-        #     check
-        #   })
-        #   
-        #   output$datawarning <- renderText({"Make sure that the above mapping
-        #                         between the levels of both factors and the columns
-        #                         of your data is correct before continuing. If it
-        #                         is not, rearrange the columns in the above box
-        #                         and hit ok again."})
-        #   
-        # 
-        #   data_prepared <- two_way_data(data(), input$rank_list_2, c(input$ws1), 
-        #                                 input$numlvls1, c(input$ws2), input$numlvls2)
-        #   
-        #   
-        #   # Update selections for test for simple effects
-        #   updateSelectInput(session, "setestvar", choices = c(input$ws1, input$ws2))
-        #   
-        #   results <- aov_ez(colnames(data_prepared)[1], "dependent_var",
-        #                     within = c(input$ws1, input$ws2), data=data_prepared)
-        #   
-        #   factor1 <- data_prepared %>% pull(input$ws1) %>% as.factor()
-        #   factor2 <- data_prepared %>% pull(input$ws2) %>% as.factor()
-        #   p_id <- data_prepared %>% pull(1)
-        #   anova_lm <- aov_ez(colnames(data_prepared)[1], "dependent_var",
-        #                      within = c(input$ws1, input$ws2), data=data_prepared,
-        #                      return=c("aov"))
-        #   
-        #   # return = lm for aov_ez
-        # 
-        #   output$results <- renderPrint({
-        #     summary(results)
-        #   })
-        # 
-        #   # Calculate chosen statistics ----------------------------------------
-        #   if (!is.null(input$stat)) {
-        # 
-        #     if ("Descriptives" %in% input$stat) {
-        #       descriptives <- two_way_anovaDescriptives(data_prepared, "dependent_var",
-        #                                                 input$ws1, input$ws2)
-        #       output$descr <- renderTable({
-        #         descriptives
-        #       })
-        #     } else {
-        #       descriptives <- "Not Calculated"
-        #     }
-        #   } else {
-        #     descriptives <- "Not Calculated"
-        #   }
-        #   
-        #   levene <- "Not Calculated"
-        # 
-        #   # Calculate effect sizes ---------------------------------------------
-        #   if (input$es == TRUE) {
-        #     options(es.use_symbols = TRUE)
-        #     esResults <- eta_squared(anova_lm, partial=TRUE)
-        #     output$esResults <- renderPrint({
-        #       esResults
-        #     })
-        # 
-        #   } else {
-        #     esResults <- "Not Calculated"
-        #   }
-        #   
-        #   posthoc <- "Not Calculated"
-        # 
-        # 
-        #   # Calculate EM Means -------------------------------------------------
-        #   if (!is.null(input$EMVars)) {
-        #     if (!is.null(input$ciadj)) {
-        #       ciadj <- input$ciadj
-        #     } else {
-        #       ciadj <- "none"
-        #     }
-        #     
-        #     if (input$ws1 %in% input$EMVars) {
-        #       em_fit1 <- emmeans(anova_lm, c(input$ws1))
-        #       emResults1 <- pairs(em_fit1, adjust=ciadj)
-        #       output$emResults1 <- renderPrint({
-        #         emResults1
-        #       })
-        #     }
-        #     
-        #     if (input$ws2 %in% input$EMVars) {
-        #       em_fit2 <- emmeans(anova_lm, c(input$ws2))
-        #       emResults1 <- pairs(em_fit2, adjust=ciadj)
-        #       output$emResults2 <- renderPrint({
-        #         emResults2
-        #       })
-        #     }
-        #     
-        #     if (input$ws2 %in% input$EMVars) {
-        #       em_fit2 <- emmeans(anova_lm, c(input$ws2))
-        #       emResults1 <- pairs(em_fit2, adjust=ciadj)
-        #       output$emResults2 <- renderPrint({
-        #         emResults2
-        #       })
-        #     }
-        #     
-        #     emResults <- emmeans(anova_lm, specs = pairwise ~ factor1:factor2)
-        #     output$emResults <- renderPrint({
-        #       emResults
-        #     })
-        #   } else {
-        #     emResults <- "Not Calculated"
-        #   }
-        #   
-        #   # Make plots -------------------------------------------------------------
-        #   if(!is.null(input$errorBars)) {
-        #     if(is.null(input$ebOptions)) {
-        #       errorBars <- "mean_ci"
-        #     } else {
-        #       errorBars <- "mean_se"
-        #     }
-        #   } else {
-        #     errorBars <- "none"
-        #   }
-        #   
-        #   all_vars <- c(input$ws1, input$ws2)
-        #   if (!is.null(input$plotXAxis)) {
-        #     output$plotResults <- renderPlot({
-        #       uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, 
-        #                   all_vars, input$type, errorBars)
-        #     })
-        #   }
-        # 
-        # 
-        # }
+        } else if (two_way == FALSE) {
+          vars <- c(colnames(data())[1], input$rank_list_2)
+          data_prepared <- one_way_data(data(), input$rank_list_2, input$ws1,
+                                        vars)
+          within_var <- data_prepared %>% pull(input$ws1) %>% as.factor()
+
+          results <- one_way_within(data_prepared, input$es, input$ws1)
+
+          p_id <- data_prepared %>% pull(1)
+
+          anova_lm <- lmer(data_prepared$dependent_var ~ within_var + (1 | p_id))
+
+          output$results <- renderPrint({
+            summary(results)
+          })
+
+          # Calculate chosen statistics ----------------------------------------
+          if (!is.null(input$stat)) {
+
+            if ("Descriptives" %in% input$stat) {
+              descriptives <- anovaDescriptives(as.data.frame(data_prepared),
+                                                "dependent_var", input$ws1)
+              output$descr <- renderTable({
+                descriptives
+              })
+            } else {
+              descriptives <- "Not Calculated"
+            }
+          } else {
+            descriptives <- "Not Calculated"
+          }
+          levene <- "Not Calculated"
+          posthoc <- "Not Calculated"
+          
+          # Handle EM Means ----------------------------------------------------
+          em1 <- c()
+          em_fit1 <- c()
+          em1_tests <- c()
+          em_fit2 <- c()
+          em2_tests <- c()
+          em_fit3 <- c()
+          em_fit4 <- c()
+          em3_tests <- c()
+          em4_tests <- c()
+          
+          em_fit1 <- emmeans(anova_lm, specs= ~ within_var)
+          em1_tests <- c(pairs(em_fit1, adjust=ciadj), 
+                         test(em_fit1, adjust=ciadj, joint=TRUE))
+          
+          output$emResults1 <- renderPrint({
+            print(c(input$ws1));
+            print(summary(em_fit1));
+            print(pairs(em_fit1, adjust=ciadj));
+            print(test(em_fit1, adjust=ciadj, joint=TRUE))
+          })
+
+          # Calculate effect sizes ---------------------------------------------
+          if (input$es == TRUE) {
+            esResults <- eta_squared(anova_lm, partial=TRUE)
+            output$esResults <- renderPrint({
+              esResults
+            })
+          } else {
+            esResults <- "Not Calculated"
+          }
+
+
+        # TWO WAY WITHIN SUBJECTS ANOVA ----------------------------------------
+        } else {
+    
+          check <- data_check(input$rank_list_2, c(input$ws1), input$numlvls1,
+                              c(input$ws2), input$numlvls2)
+
+          output$data <- renderTable({
+            check
+          })
+
+          output$datawarning <- renderText({"Make sure that the above mapping
+                                between the levels of both factors and the columns
+                                of your data is correct before continuing. If it
+                                is not, rearrange the columns in the above box
+                                and hit ok again."})
+
+
+          data_prepared <- two_way_data(data(), input$rank_list_2, c(input$ws1),
+                                        input$numlvls1, c(input$ws2), input$numlvls2)
+
+
+          # Update selections for test for simple effects
+          updateSelectInput(session, "setestvar", choices = c(input$ws1, input$ws2))
+
+          results <- aov_ez(colnames(data_prepared)[1], "dependent_var",
+                            within = c(input$ws1, input$ws2), data=data_prepared)
+
+          factor1 <- data_prepared %>% pull(input$ws1) %>% as.factor()
+          factor2 <- data_prepared %>% pull(input$ws2) %>% as.factor()
+          p_id <- data_prepared %>% pull(1)
+          anova_lm <- aov_ez(colnames(data_prepared)[1], "dependent_var",
+                             within = c(input$ws1, input$ws2), data=data_prepared,
+                             return=c("aov"))
+
+          output$results <- renderPrint({
+            summary(results)
+          })
+
+          # Calculate chosen statistics ----------------------------------------
+          if (!is.null(input$stat)) {
+
+            if ("Descriptives" %in% input$stat) {
+              descriptives <- two_way_anovaDescriptives(data_prepared, "dependent_var",
+                                                        input$ws1, input$ws2)
+              output$descr <- renderTable({
+                descriptives
+              })
+            } else {
+              descriptives <- "Not Calculated"
+            }
+          } else {
+            descriptives <- "Not Calculated"
+          }
+
+          levene <- "Not Calculated"
+
+          # Calculate effect sizes ---------------------------------------------
+          if (input$es == TRUE) {
+            options(es.use_symbols = TRUE)
+            esResults <- eta_squared(anova_lm, partial=TRUE)
+            output$esResults <- renderPrint({
+              esResults
+            })
+
+          } else {
+            esResults <- "Not Calculated"
+          }
+
+          posthoc <- "Not Calculated"
+
+
+          # Calculate EM Means -------------------------------------------------
+          if (!is.null(input$EMVars)) {
+            if (!is.null(input$ciadj)) {
+              ciadj <- 'bonferroni'
+            } else {
+              ciadj <- "none"
+            }
+            
+            if ("OVERALL" %in% input$EMVars) {
+              em1 <- emmeans_descr(data_prepared, "dependent_var", levels=FALSE)
+              output$emResults_overall <- renderPrint({
+                print("Grand Mean");
+                em1
+              })
+            } else {
+              em1 <- c()
+            }
+            
+            if (input$ws1 %in% input$EMVars) {
+              em_fit1 <- emmeans(anova_lm, c(input$ws1))
+              output$emResults1 <- renderPrint({
+                print(c(input$ws1));
+                print(summary(em_fit1));
+                if ("Compare main effects" %in% input$cme) {
+                  print(pairs(em_fit1, adjust=ciadj));
+                  print(test(em_fit1, adjust=ciadj, joint=TRUE))
+                } else {
+                  em1_tests <- c()
+                }
+                
+              })
+              if ("Compare main effects" %in% input$cme) {
+                em1_tests <- c(pairs(em_fit1, adjust=ciadj),
+                               test(em_fit1, adjust=ciadj, joint=TRUE))
+              } else {
+                em1_tests <- c()
+              }
+              
+            } else {
+              em_fit1 <- c()
+              em1_tests <- c()
+            }
+            
+            if (input$ws2 %in% input$EMVars) {
+              em_fit2 <- emmeans(anova_lm, input$ws2)
+              # emResults1 <- pairs(em_fit2, adjust=ciadj)
+              output$emResults2 <- renderPrint({
+                print(c(input$ws2));
+                print(summary(em_fit2));
+                if ("Compare main effects" %in% input$cme) {
+                  print(pairs(em_fit2, adjust=ciadj));
+                  print(test(em_fit2, adjust=ciadj, joint=TRUE))
+                } else {
+                  em2_tests <- c()
+                }
+              })
+              
+              if ("Compare main effects" %in% input$cme) {
+                em2_tests <- c(pairs(em_fit1, adjust=ciadj),
+                               test(em_fit1, adjust=ciadj, joint=TRUE))
+              } else {
+                em2_tests <- c()
+              }
+              
+            } else {
+              em_fit2 <- c()
+              em2_tests <- c()
+            }
+            
+            interaction <- paste(c(input$ws1, input$ws2), collapse = "*")
+            if (interaction %in% input$EMVars) {
+              em_fit3 <- emmeans(anova_lm, c(input$ws1), by=c(input$ws2), 
+                                 model="multivariate")
+              em_fit4 <- emmeans(anova_lm, c(input$ws2), by=c(input$ws1))
+              output$emResults_inter <- renderPrint({
+                print("Interaction");
+                print("Estimates")
+                print(summary(em_fit3));
+                print(summary(em_fit4));
+                if ("Compare simple main effects" %in% input$cme) {
+                  print("Pairwise Comparisons");
+                  print(pairs(em_fit3, adjust=ciadj));
+                  print("Multivariate Tests - Pillai's Trace Test Statistic");
+                  print(joint_tests(em_fit3, by=input$ws2));
+                  print("Pairwise Comparisons");
+                  print(pairs(em_fit4, adjust=ciadj));
+                  print("Univariate Test");
+                  print(joint_tests(em_fit4, by=c(input$ws1)))
+                }
+              })
+              if ("Compare simple main effects" %in% input$cme) {
+                em3_tests <- c(pairs(em_fit3, adjust=ciadj), 
+                               summary(joint_tests(em_fit3, by=input$rank_list_3)))
+                em4_tests <- c(pairs(em_fit4, adjust=ciadj), 
+                               summary(joint_tests(em_fit4, by=c(input$ws1))))
+              } else {
+                em3_tests <- c()
+                em4_tests <- c()
+              }
+            } else {
+              em_fit3 <- c()
+              em_fit4 <- c()
+              em3_tests <- c()
+              em4_tests <- c()
+            }
+            
+          } else {
+            em1 <- c()
+            em_fit1 <- c()
+            em1_tests <- c()
+            em_fit2 <- c()
+            em2_tests <- c()
+            em_fit3 <- c()
+            em_fit4 <- c()
+            em3_tests <- c()
+            em4_tests <- c()
+          }
+
+          # Make plots -------------------------------------------------------------
+          if(!is.null(input$errorBars)) {
+            if(is.null(input$ebOptions)) {
+              errorBars <- "mean_ci"
+            } else {
+              errorBars <- "mean_se"
+            }
+          } else {
+            errorBars <- "none"
+          }
+
+          all_vars <- c(input$ws1, input$ws2)
+          if (!is.null(input$plotXAxis)) {
+            plot <- uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, 
+                                "dependent_var", input$type, errorBars)
+            output$plotResults <- renderPlot({
+              plot
+            })
+          } else {
+            plot <- c()
+          }
+          
+        }
         
         se_results <- "Not Calculated"
         

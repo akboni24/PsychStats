@@ -44,11 +44,6 @@ ui <- navbarPage(
             mainPanel(
              DT::dataTableOutput("table1")
            ))),
-  navbarMenu("File", "one"),
-  navbarMenu("Edit", "two"),
-  navbarMenu("View", "three"),
-  navbarMenu("Data", "four"),
-  navbarMenu("Transform", "five"),
   navbarMenu("Analyze", 
              "Descriptive Stats", # section headers
              tabPanel("Frequencies", fluidPage(freqUI("freq"))),
@@ -68,6 +63,7 @@ ui <- navbarPage(
   navbarMenu("Graphs", 
              "Legacy Dialogs",
              tabPanel("Simple Scatter", fluidPage(scatterUI("scat")))),
+  navbarMenu("R Tutorials", "five")
 
 
 )

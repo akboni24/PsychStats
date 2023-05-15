@@ -323,6 +323,27 @@ one_way_within <- function(data_prepared, effectSizes, w_name) {
 
 
 two_way_data <- function(data, order, factor1, num_lvls1, factor2, num_lvls2) {
+  #' Converts data from wide format to long format for two way within ANOVA
+  #' 
+  #' Parameters:
+  #' -----------
+  #' data: data frame.
+  #' order: list.
+  #'    order that the user put the variables in
+  #' factor1: str.
+  #'    name of the first within subjects factor
+  #' num_lvls1: int.
+  #'    number of levels that the first factor has
+  #' factor2: str.
+  #'    name of the second within subjects factor
+  #' num_lvls2: int.
+  #'    number of levels that the second factor has
+  #'    
+  #' Returns:
+  #' ---------
+  #' long_data: dataframe
+  #'    data converted into long format
+  # ----------------------------------------------------------------------------
   p_id <- colnames(data)[1]
   col_order <- c(p_id, order)
   data <- data[, col_order]
@@ -346,7 +367,26 @@ two_way_data <- function(data, order, factor1, num_lvls1, factor2, num_lvls2) {
 }
 
 data_check <- function(order, factor1, num_lvls1, factor2, num_lvls2) {
-  
+  #' Displays a table of how the user mapped the levels of their within subjects
+  #' factors for two way within subjects ANOVA
+  #' 
+  #' Parameters:
+  #' ------------
+  #' order: list.
+  #'    order that the user put the variables in
+  #' factor1: str.
+  #'    name of the first within subjects factor
+  #' num_lvls1: int.
+  #'    number of levels that the first factor has
+  #' factor2: str.
+  #'    name of the second within subjects factor
+  #' num_lvls2: int.
+  #'    number of levels that the second factor has
+  #'    
+  #' Returns:
+  #' ---------
+  #' data frame.
+  #' ---------------------------------------------------------------------------
   Factor1 <- rep(0:(num_lvls1 - 1), times = 1, each = num_lvls2)
   Factor2 <- rep(0:(num_lvls2 - 1), times = num_lvls1)
   
