@@ -52,7 +52,7 @@ oneWayAnovaUI <- function(id) {
         h3("Welch Test"),
         verbatimTextOutput(ns("welch")),
         h3("ANOVA"),
-        tableOutput(ns("results")),
+        verbatimTextOutput(ns("results")),
         h3("Effect Sizes"),
         tableOutput(ns("esResults")),
         h3("Post Hoc Tests"),
@@ -134,10 +134,11 @@ oneWayAnovaServer <- function(id, data) {
         # Calculate the ANOVA and display the results in a table -----------------
         col1 <- data() %>% pull(input$rank_list_2)
         col2 <- as.factor(data() %>% pull(input$rank_list_3))
-        anovaResults <- anova(lm(col1 ~ col2))
+        anovaResults <- aov_ez(colnames(data())[1], input$rank_list_2, data=data(),
+                               between=c(input$rank_list_3))
         
-        output$results <- renderTable({
-          return(anovaResults)
+        output$results <- renderPrint({
+          summary(anovaResults)
         })
         
         # Calculate chosen statistics ------------------------------------------
@@ -152,7 +153,7 @@ oneWayAnovaServer <- function(id, data) {
               descriptives
             })
           } else {
-            descriptives <- "Not Calulated"
+            descriptives <- c()
           }
           
           if ("Homogeneity of variance test" %in% input$stat) {
@@ -162,20 +163,23 @@ oneWayAnovaServer <- function(id, data) {
               levene
             })
           } else {
-            levene <- "Not Calulated"
+            levene <- c()
           }
           
-          if ("Welch Test" %in% input$stat) {
+          if ("Welch test" %in% input$stat) {
             
-            welch <- oneway.test(col1 ~ col2)
+            welch <- oneway.test(col1 ~ col2, data=data())
             output$welch <- renderPrint({
               welch
             })
           } else {
-            welch <- "Not Calulated"
+            welch <- c()
           }
-          
       
+        } else {
+          descriptives <- c()
+          levene <- c()
+          welch <- c()
         }
         
         # Calculate effect sizes -----------------------------------------------
@@ -202,9 +206,10 @@ oneWayAnovaServer <- function(id, data) {
         }
         
         # Generate the downloadable pdf report ---------------------------------
+        em_over <- emmeans_descr(data(), input$rank_list_2, levels=FALSE)
         emmeans <- emmeans(lm(col1 ~ col2), specs= ~ col2)
         params <- list(descr = descriptives, levene=levene, welch=welch,
-                       anova=anovaResults, n2=esResults, em=emmeans,
+                       anova=anovaResults, n2=esResults, em_o=em_over, em=emmeans,
                        posthoc=posthoc)
         
         output$report <- generate_report("one_way_anova_report", params)

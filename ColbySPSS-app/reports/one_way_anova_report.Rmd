@@ -7,6 +7,7 @@ params:
   welch: NA
   anova: NA
   n2: NA
+  em_o: NA
   em: NA
   posthoc: NA
 ---
@@ -36,12 +37,12 @@ kable(params$levene)
 
 ### Welch Test
 ```{r}
-kable(params$welch)
+params$welch
 ```
 
 ### Analysis of Variance Table
 ```{r}
-kable(params$anova)
+summary(params$anova)
 ```
 
 ### Effect Sizes
@@ -50,6 +51,11 @@ kable(params$n2)
 ```
 
 ### Estimated Marginal Means
+#### Grand Mean
+```{r}
+params$em_o
+```
+#### Between Subjects Factor
 ```{r}
 summary(params$em)
 ```
