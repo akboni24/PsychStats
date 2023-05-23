@@ -4,7 +4,7 @@ library(effectsize)
 library(DescTools)
 library(tidyr)
 library(lsmeans)
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/anova-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/anova-functions.R")
 # User Interface ---------------------------------------------------------------
 univariateUI <- function(id) {
   
@@ -59,7 +59,10 @@ univariateUI <- function(id) {
         h3("Effect Sizes"),
         tableOutput(ns("esResults")),
         h3("Estimated Marginal Means"),
-        verbatimTextOutput(ns("emResults")),
+        verbatimTextOutput(ns("emResults_overall")),
+        verbatimTextOutput(ns("emResults1")),
+        verbatimTextOutput(ns("emResults2")),
+        verbatimTextOutput(ns("emResults_inter")),
         h3("Post Hoc Tests"),
         verbatimTextOutput(ns("phTests")),
         h3("Plots"),
@@ -171,10 +174,10 @@ univariateServer <- function(id, data) {
       } else {
       
         # Calculate the ANOVA and display the results in a table -----------------
-        col1 <- data() %>% pull(input$rank_list_2)
-        col2 <- as.factor(data() %>% pull(input$rank_list_3[1]))
-        col3 <- as.factor(data() %>% pull(input$rank_list_3[2]))
-        anova_lm <- lm(col1 ~ col2*col3)
+        dependent_var <- data() %>% pull(input$rank_list_2)
+        between1 <- as.factor(data() %>% pull(input$rank_list_3[1]))
+        between2 <- as.factor(data() %>% pull(input$rank_list_3[2]))
+        anova_lm <- lm(dependent_var ~ between1*between2)
         anovaResults <- anova(anova_lm)
         
         output$results <- renderPrint({
@@ -255,17 +258,17 @@ univariateServer <- function(id, data) {
         # Conduct Post Hoc Tests -------------------------------------------------
         if (!is.null(input$eva)) {
           if (input$rank_list_3[1] %in% input$postHocVars && input$rank_list_3[2] %in% input$postHocVars) {
-            posthoc <- uniPostHocCalc(input$eva, col1, col2, col3, 0.95)
+            posthoc <- uniPostHocCalc(input$eva, dependent_var, between1, between2, 0.95)
             output$phTests <- renderPrint({
               posthoc
         })
         } else if (input$rank_list_3[1] %in% input$postHocVars) {
-          posthoc <- postHocCalc(input$eva, col1, col2, 0.95)
+          posthoc <- postHocCalc(input$eva, dependent_var, between1, 0.95)
           output$phTests <- renderPrint({
             posthoc
           })
         } else if (input$rank_list_3[2] %in% input$postHocVars) {
-          posthoc <- postHocCalc(input$eva, col1, col3, 0.95)
+          posthoc <- postHocCalc(input$eva, dependent_var, between2, 0.95)
           output$phTests <- renderPrint({
             posthoc
           })
@@ -280,16 +283,119 @@ univariateServer <- function(id, data) {
         # Calculate EM Means -----------------------------------------------------
         if (!is.null(input$EMVars)) {
           if (!is.null(input$ciadj)) {
-            ciadj <- input$ciadj
+            ciadj <- 'bonferroni'
           } else {
             ciadj <- "none"
           }
-          emmeans <- uniEMCalc(input$EMVars, input$ciadj, anova_lm, col2, col3)
-          output$emResults <- renderPrint({
-            emmeans
-          })
+          
+          if ("OVERALL" %in% input$EMVars) {
+            em1 <- emmeans_descr(data(), input$rank_list_2, levels=FALSE)
+            output$emResults_overall <- renderPrint({
+              print("Grand Mean");
+              em1
+            })
+          } else {
+            em1 <- c()
+          }
+          
+          if (input$rank_list_3[1] %in% input$EMVars) {
+            em_fit1 <- emmeans(anova_lm, input$rank_list_3[1])
+            output$emResults1 <- renderPrint({
+              print(c(input$rank_list_3[1]));
+              print(summary(em_fit1));
+              if ("Compare main effects" %in% input$cme) {
+                print(pairs(em_fit1, adjust=ciadj));
+                print(test(em_fit1, adjust=ciadj, joint=TRUE))
+              } else {
+                em1_tests <- c()
+              }
+              
+            })
+            if ("Compare main effects" %in% input$cme) {
+              em1_tests <- c(pairs(em_fit1, adjust=ciadj),
+                             test(em_fit1, adjust=ciadj, joint=TRUE))
+            } else {
+              em1_tests <- c()
+            }
+            
+          } else {
+            em_fit1 <- c()
+            em1_tests <- c()
+          }
+          
+          if (input$rank_list_3[2] %in% input$EMVars) {
+            em_fit2 <- emmeans(anova_lm, input$rank_list_3[2])
+            output$emResults2 <- renderPrint({
+              print(c(input$rank_list_3[2]));
+              print(summary(em_fit2));
+              if ("Compare main effects" %in% input$cme) {
+                print(pairs(em_fit2, adjust=ciadj));
+                print(test(em_fit2, adjust=ciadj, joint=TRUE))
+              } else {
+                em2_tests <- c()
+              }
+            })
+            
+            if ("Compare main effects" %in% input$cme) {
+              em2_tests <- c(pairs(em_fit2, adjust=ciadj),
+                             test(em_fit2, adjust=ciadj, joint=TRUE))
+            } else {
+              em2_tests <- c()
+            }
+            
+          } else {
+            em_fit2 <- c()
+            em2_tests <- c()
+          }
+          
+          interaction <- paste(input$rank_list_3, collapse = "*")
+          if (interaction %in% input$EMVars) {
+            em_fit3 <- emmeans(anova_lm, input$rank_list_3[1], 
+                               by=input$rank_list_3[2])
+            em_fit4 <- emmeans(anova_lm, input$rank_list_3[2], 
+                               by=input$rank_list_3[1])
+            output$emResults_inter <- renderPrint({
+              print("Interaction");
+              print("Estimates")
+              print(summary(em_fit3));
+              print(summary(em_fit4));
+              if ("Compare simple main effects" %in% input$cme) {
+                print("Pairwise Comparisons");
+                print(pairs(em_fit3, adjust=ciadj));
+                print("Univariate Test");
+                print(joint_tests(em_fit3, by=input$rank_list_3[2]));
+                print("Pairwise Comparisons");
+                print(pairs(em_fit4, adjust=ciadj));
+                print("Univariate Test");
+                print(joint_tests(em_fit4, by=input$rank_list_3[1]))
+              }
+            })
+            if ("Compare simple main effects" %in% input$cme) {
+              em3_tests <- c(pairs(em_fit3, adjust=ciadj), 
+                             summary(joint_tests(em_fit3, by=input$rank_list_3[2])))
+              em4_tests <- c(pairs(em_fit4, adjust=ciadj), 
+                             summary(joint_tests(em_fit4, by=input$rank_list_3[1])))
+            } else {
+              em3_tests <- c()
+              em4_tests <- c()
+            }
+          } else {
+            em_fit3 <- c()
+            em_fit4 <- c()
+            em3_tests <- c()
+            em4_tests <- c()
+          }
+          
         } else {
-          emmeans <- "Not Calculated"
+          em1 <- c()
+          em_fit1 <- c()
+          em1_tests <- c()
+          em_fit2 <- c()
+          em2_tests <- c()
+          em_fit3 <- c()
+          em_fit4 <- c()
+          em3_tests <- c()
+          em4_tests <- c()
         }
       
         observeEvent(input$rank_list_3, {
@@ -300,29 +406,34 @@ univariateServer <- function(id, data) {
         observeEvent(input$seOK,
          {
            req(input$setest)
-           
-           aov_lm <- lm(col1 ~ col2 + col3 + col2:col3)
+    
            
            if (is.null(input$setestvar)) {
-             lsm <- emmeans(aov_lm, ~ col3 | col2)
+             lsm <- emmeans(anova_lm, input$rank_list_3[1], 
+                            by=input$rank_list_3[2])
+             by_var <- input$rank_list_3[2]
            } else {
-             lsm <- emmeans(aov_lm, ~ col2 | col3)
+             lsm <- emmeans(anova_lm, input$rank_list_3[2], 
+                            by=input$rank_list_3[1])
+             by_var <- input$rank_list_3[1]
            }
            
            
-           se_results <- test(contrast(lsm, "poly"), joint = TRUE)
-           #se_results <- test_simple_effects(data(), not_selected, input$rank_list_2, 
-           #sefactor)
+           se_results1 <- pairs(lsm, adjust=ciadj)
+           se_results2 <- summary(joint_tests(em_fit4, by=by_var))
            
            
            output$seResults <- renderPrint({
-             se_results
+             print("Pairwise Comparisons");
+             print(se_results1);
+             print("Univariate Test");
+             print(se_results2)
            })
            
            # Generate the downloadable pdf report ---------------------------------
            params <- list(descr=descriptives, levene=levene, welch=welch,
                           anova=anovaResults, n2=esResults, em=emmeans,
-                          posthoc=posthoc, se=se_results)
+                          posthoc=posthoc, se=c(se_results1, se_results2))
            
            output$report <- generate_report("univariate_report", params)
          })

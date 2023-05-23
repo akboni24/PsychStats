@@ -475,9 +475,17 @@ two_emmeans <- function(data, dep_name, var_name, split_by) {
   final_dfs
 }
 
-mixed_levenes <- function(data, dep, between, within) {
-  factor <- as.factor(data %>% pull(within))
+
+levenes_helper <- function(data, dep, group) {
+  dependent_var <- data %>% pull(dep)
+  grouping <- data %>% pull(group) %>% as.factor()
+  result <- leveneTest(y=dependent_var, group=grouping, center=mean)
+  result
+}
+
+mixed_levenes <- function(data, dep_name, between, within) {
+  factor <- data %>% pull(within) %>% as.factor()
   dfs <- split(data, factor)
-  levenes <- lapply(dfs, FUN=leveneTest, y=dep, group=within)
+  levenes <- lapply(dfs, FUN=levenes_helper, dep=dep_name, group=between)
   levenes
 }

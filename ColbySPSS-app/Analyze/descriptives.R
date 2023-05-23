@@ -1,6 +1,6 @@
 library(shiny)
 library(sortable)
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
 descriptivesUI <- function(id) {
   

@@ -2,7 +2,7 @@ library(shiny)
 library(sortable)
 library(purrr)
 library(shinyFeedback)
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
 
 freqUI <- function(id) {

@@ -4,8 +4,8 @@ library(effectsize)
 library(DescTools)
 library(ppcor)
 library("Hmisc")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/regression-functions.R")
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/regression-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
 correlationUI <- function(id) {
   

@@ -2,7 +2,7 @@ library(shiny)
 library(sortable)
 library(gtsummary)
 library(rempsyc)
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/analyze-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
 indSamplesTUI <- function(id) {
   

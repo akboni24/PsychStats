@@ -2,7 +2,7 @@ library(shiny)
 library(sortable)
 library(effectsize)
 library(DescTools)
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/anova-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/anova-functions.R")
 # User Interface ---------------------------------------------------------------
 oneWayAnovaUI <- function(id) {
   

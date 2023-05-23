@@ -5,7 +5,7 @@ library(DescTools)
 library(afex)
 library(rstatix)
 library(effectsize)
-source("~/Documents/git_repos/SPSS-R/ColbySPSS-app/Analyze/anova-functions.R")
+source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/anova-functions.R")
 # User Interface ---------------------------------------------------------------
 repeatedMeasuresUI <- function(id) {
   
@@ -270,7 +270,8 @@ repeatedMeasuresServer <- function(id, data) {
             }
             
             if ("Homogeneity of variance test" %in% input$stat) {
-              levene <- mixed_levenes(data_prepared, anova_lm, center=mean)
+              levene <- mixed_levenes(data_prepared, "dependent_var", 
+                                      input$rank_list_3, c(input$ws1))
               
               
               output$levene <- renderPrint({
@@ -363,8 +364,8 @@ repeatedMeasuresServer <- function(id, data) {
               })
               
               if ("Compare main effects" %in% input$cme) {
-                em2_tests <- c(pairs(em_fit1, adjust=ciadj),
-                               test(em_fit1, adjust=ciadj, joint=TRUE))
+                em2_tests <- c(pairs(em_fit2, adjust=ciadj),
+                               test(em_fit2, adjust=ciadj, joint=TRUE))
               } else {
                 em2_tests <- c()
               }
@@ -642,8 +643,8 @@ repeatedMeasuresServer <- function(id, data) {
               })
               
               if ("Compare main effects" %in% input$cme) {
-                em2_tests <- c(pairs(em_fit1, adjust=ciadj),
-                               test(em_fit1, adjust=ciadj, joint=TRUE))
+                em2_tests <- c(pairs(em_fit2, adjust=ciadj),
+                               test(em_fit2, adjust=ciadj, joint=TRUE))
               } else {
                 em2_tests <- c()
               }
@@ -731,26 +732,38 @@ repeatedMeasuresServer <- function(id, data) {
         observeEvent(input$seOK,
                      {
                        req(input$setest)
+                       
+                       if (!is.null(input$setestadj)) {
+                         ciadj <- 'bonferroni'
+                       } else {
+                         ciadj <- "none"
+                       } 
+                       
                        if (mixed == TRUE) {
                          if (is.null(input$setestvar)) {
-                           lsm <- em_fit4
+                           lsm <- emmeans(anova_lm, c(input$ws1), by=input$rank_list_3, 
+                                          model="multivariate")
                          } else {
-                           lsm <- em_fit3
+                           lsm <- emmeans(anova_lm, input$rank_list_3, by=c(input$ws1))
                          }
                        } else {
                          if (is.null(input$setestvar)) {
-                           lsm <- emmeans(anova_lm, c(input$ws2), by = c(input$ws1))
+                           lsm <- emmeans(anova_lm, c(input$ws1), by=c(input$ws2), 
+                                          model="multivariate")
                          } else {
-                           lsm <- emmeans(anova_lm, c(input$ws1), by = c(input$ws2))
+                           lsm <- emmeans(anova_lm, c(input$ws2), by=c(input$ws1),
+                                          model="multivariate")
                          }
                        }
                        
                        
-                       se_results <- test(contrast(lsm, "poly"), joint = TRUE)
+                       se_results <- c(pairs(lsm, adj=ciadj), 
+                                       summary(joint_tests(lsm)))
                        
                        
                        output$seResults <- renderPrint({
-                         se_results
+                         print(se_results[1]);
+                         se_results[2]
                        })
                        
                        
