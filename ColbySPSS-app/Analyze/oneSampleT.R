@@ -3,6 +3,7 @@ library(sortable)
 library(rmarkdown)
 library(knitr)
 library(tidyverse)
+library(shinyjs)
 source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
 source("~/Documents/git_repos/PsychStats/ColbySPSS-app/reports/reports-functions.R")
 # User Interface ---------------------------------------------------------------
@@ -12,9 +13,14 @@ oneSampleTUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    shinyFeedback::useShinyFeedback(),
     titlePanel("One Sample T Test"),
-    
+    useShinyjs(),
+    fluidRow (
+      column (
+        width = 12,
+        h5("Please drag over one variable to conduct a one sample t test.")
+      )
+    ),
     # Creates two drag and drop buckets ----------------------------------------
     fluidRow(
       column (
@@ -37,7 +43,8 @@ oneSampleTUI <- function(id) {
       column(
         width = 10,
         # Should hide the OK button until the user has moved at least one variable....
-        actionButton(ns("ok"), "OK")
+        disabled(actionButton(ns("ok"), "OK")),
+        br()
       )
     ),
     fluidRow (
@@ -83,6 +90,8 @@ oneSampleTServer <- function(id, data) {
         ))
       
     })
+    
+    observe({ toggleState(id="ok", condition=length(input$rank_list_2) == 1) })
     
     # Show Options modal if selected -------------------------------------------
     observeEvent(input$options, {
