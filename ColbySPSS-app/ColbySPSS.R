@@ -3,7 +3,8 @@ library(bslib)
 library(rstatix)
 library(rmarkdown)
 library(knitr)
-library("ggvis")
+library(ggvis)
+library(readxl)
 
 # here is where I am importing all of my other files - there's a better way to do
 # this, I just haven't gotten it to work yet
@@ -30,15 +31,13 @@ ui <- navbarPage(
              # sidebar panel for csv file upload
              sidebarPanel(
                # Input: Select a file ---------------
-               fileInput("file1", "Choose a CSV File",
+               fileInput("file1", "Choose a CSV (.csv) or Excel (.xlsx) File",
                          multiple = FALSE,
                          # only accepts csv's
                          accept = c("text/csv",
                                     "text/comma-separated-values,text/plain",
-                                    ".csv")),
-               # Input: Checkbox if file has header ----
-               # CURRENTLY NOT BEING USED
-               checkboxInput("header", "Header Row", TRUE)), 
+                                    ".csv", 
+                                    ".xlsx"))),
               
             # Main Panel for the data table ---------------
             mainPanel(
@@ -76,8 +75,13 @@ server <- function(input, output, session) {
   # Converts given csv to a data frame and turns it into a data table
   df <- reactive({
     req(input$file1)
-    load_file(input$file1$name, input$file1$datapath)
-    #mutate_if(df, is.character, as.factor)
+    ext <- tools::file_ext(input$file1$name)
+    if (ext == "xlsx") {
+      read_excel(paste(input$file1$datapath))
+    } else{
+      load_file(input$file1$name, input$file1$datapath)
+    }
+
   })
   
   
