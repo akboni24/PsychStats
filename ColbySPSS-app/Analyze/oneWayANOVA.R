@@ -10,7 +10,7 @@ oneWayAnovaUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    
+    useShinyjs(),
     titlePanel("One Way ANOVA"),
     
     # Creates two drag and drop buckets
@@ -84,7 +84,7 @@ oneWayAnovaServer <- function(id, data) {
           labels = vars(),
           input_id = ns("rank_list_1")),
         add_rank_list(
-          text = "Dependent List: ",
+          text = "Dependent Variable: ",
           labels = NULL,
           input_id = ns("rank_list_2")
         ), 
@@ -95,6 +95,10 @@ oneWayAnovaServer <- function(id, data) {
         ))
       
     })
+    
+    observe({ 
+      toggleState(id="ok", 
+        condition=length(input$rank_list_2)==1&&length(input$rank_list_3==1)) })
 
     # Show post hoc and options modals if selected -----------------------------
     observeEvent(input$posthoc, {

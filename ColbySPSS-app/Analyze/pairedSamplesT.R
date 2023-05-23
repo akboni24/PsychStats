@@ -9,7 +9,7 @@ pairedSamplesTUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    
+    useShinyjs(),
     titlePanel("Paired Samples T Test"),
     
     # Creates two drag and drop buckets
@@ -85,6 +85,9 @@ pairedSamplesTServer <- function(id, data) {
       
     })
     
+    observe({ 
+      toggleState(id="ok", 
+      condition=length(input$rank_list_2)==1&&length(input$rank_list_3==1)) })
   
     # Show options modal if selected -------------------------------------------
     observeEvent(input$options, {

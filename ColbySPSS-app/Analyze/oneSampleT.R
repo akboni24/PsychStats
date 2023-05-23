@@ -1,9 +1,7 @@
 library(shiny)
 library(sortable)
-library(rmarkdown)
 library(knitr)
 library(tidyverse)
-library(shinyjs)
 source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
 source("~/Documents/git_repos/PsychStats/ColbySPSS-app/reports/reports-functions.R")
 # User Interface ---------------------------------------------------------------

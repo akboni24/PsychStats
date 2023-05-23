@@ -4,6 +4,7 @@ library(effectsize)
 library(DescTools)
 library(ppcor)
 library("Hmisc")
+library(shinyjs)
 source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/regression-functions.R")
 source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
@@ -13,7 +14,7 @@ correlationUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    
+    useShinyjs(),
     titlePanel("Correlation: Bivariate"),
     
     # Creates two drag and drop buckets
@@ -86,7 +87,7 @@ correlationServer <- function(id, data) {
       
     })
     
-    
+    observe({ toggleState(id="ok", condition=length(input$rank_list_2) >= 1) })
     # Show options modal if selected -----------------------------
     observeEvent(input$options, {
       showModal(corrOptionsModal(input, output, session))

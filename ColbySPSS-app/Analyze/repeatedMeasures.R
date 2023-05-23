@@ -13,7 +13,7 @@ repeatedMeasuresUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    
+    useShinyjs(),
     titlePanel("Repeated Measures"),
     fluidRow (
       column (
@@ -143,6 +143,7 @@ repeatedMeasuresServer <- function(id, data) {
       
     })
     
+    observe({ toggleState(id="ok", condition=length(input$rank_list_2)>=1) })
     
     # Show plot, post hoc, and options modals if selected ----------------------
     observeEvent(input$plots, {

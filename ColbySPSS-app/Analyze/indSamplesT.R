@@ -10,7 +10,7 @@ indSamplesTUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    
+    useShinyjs(),
     titlePanel("Independent Samples T Test"),
     
     # Creates two drag and drop buckets
@@ -34,7 +34,6 @@ indSamplesTUI <- function(id) {
     fluidRow(
       column(
         width = 10,
-        # Should hide the OK button until the user has moved at least one variable....
         actionButton(ns("ok"), "OK")
       )
     ),
@@ -80,18 +79,21 @@ indSamplesTServer <- function(id, data) {
           labels = vars(),
           input_id = ns("rank_list_1")),
         add_rank_list(
-          text = "Test Variable(s):",
+          text = "Test Variable:",
           labels = NULL,
           input_id = ns("rank_list_2")
         ), 
         add_rank_list(
-          text = "Grouping Variable(s):",
+          text = "Grouping Variable:",
           labels = NULL,
           input_id = ns("rank_list_3")
         ))
       
     })
-  
+    
+    observe({ 
+      toggleState(id="ok", 
+      condition=length(input$rank_list_2)==1&&length(input$rank_list_3==1)) })
     
     observeEvent(input$options, {
       showModal(ttestOptionsModal(input, output, session))
