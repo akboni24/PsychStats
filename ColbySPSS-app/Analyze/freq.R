@@ -1,7 +1,7 @@
 library(shiny)
 library(sortable)
 library(purrr)
-library(shinyFeedback)
+library(epiDisplay)
 source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
 # User Interface ---------------------------------------------------------------
 
@@ -12,8 +12,7 @@ freqUI <- function(id) {
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))
     ),
-    
-    shinyFeedback::useShinyFeedback(),
+    useShinyjs(),
     titlePanel("Frequencies"),
   
     # Creates two drag and drop buckets
@@ -31,15 +30,13 @@ freqUI <- function(id) {
     fluidRow(
       column(
         width = 10,
-        # Should hide the OK button until the user has moved at least one variable....
-        checkboxInput(ns("freqtables"), label="Display frequency tables", 
-                      value=TRUE)
+        checkboxInput(ns("apa"), label="APA style tables", 
+                      value=FALSE)
       )
     ),
     fluidRow(
       column(
         width = 10,
-        # Should hide the OK button until the user has moved at least one variable....
         actionButton(ns("ok"), "OK"),
         actionButton(ns("cancel"), "Cancel")
       )
@@ -47,9 +44,13 @@ freqUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        textOutput(ns("frequencies")),
-        textOutput(ns("stat_results")),
-        textOutput(ns("chart_results")),
+        h3("Frequency Table"),
+        tableOutput(ns("frequencies")),
+        h3("Statistics"),
+        h5("Central Tendency"),
+        verbatimTextOutput(ns("stat_results")),
+        h5("Dispersion"),
+        verbatimTextOutput(ns("chart_results")),
       )
     )
     
@@ -73,7 +74,7 @@ freqServer <- function(id, data) {
         group_name = "bucket_list_group",
         orientation = "horizontal",
         add_rank_list(
-          text = "variables",
+          text = "Variables",
           labels = vars(),
           input_id = ns("rank_list_1")),
         add_rank_list(
@@ -84,38 +85,58 @@ freqServer <- function(id, data) {
     
   })
     
-    observeEvent(input$stat, {
-      showModal(statsModal(input, output, session))
-    })
-    
-    observeEvent(input$submit, {
-      removeModal()
-    })
+  # Enable OK button once the user has selected at least one variable ----------
+  observe({ toggleState(id="ok", condition=length(input$rank_list_2) == 1) })
   
-  # Wait for the user to hit submit
+  # Display pop-up menus if selected -------------------------------------------
+  observeEvent(input$stat, {
+    showModal(statsModal(input, output, session))
+  })
+  
+  observeEvent(input$submit, {
+    removeModal()
+  })
+  
+  observeEvent(input$chart, {
+    showModal(freqChartsModal(input, output, session))
+  })
+  
+  observeEvent(input$submit, {
+    removeModal()
+  })
+  
+  # Wait for the user to hit submit --------------------------------------------
   observeEvent(input$ok, {
     
-    # close the pop-up window
-    removeModal()
-    
+    # Extract variables
     cols <- extractCols(input$rank_list_2, data())
     
-    # Central Tendency ---------------------------------------------------------
+    # Calculate frequencies ----------------------------------------------------
+    if (input$apa == TRUE) {
+      results <- tab1(cols, cum.percent = FALSE)
+    } else {
+      results <- tab1(cols, cum.percent=TRUE)
+    }
+    
+    output$frequencies <- renderTable({results})
+    
+    # Calculate chosen statistics ----------------------------------------------
+    # Central Tendency
     centen_results <- NULL
     if (!is.null(input$centen)) {
       centen_results <- centraltendency(cols, input$centen)
     }
     
-    # Dispersion ---------------------------------------------------------------
-    disp_result <- NULL
+    # Dispersion
+    disp_results <- NULL
     if (!is.null(input$disp)) {
       disp_results <- dispersion(cols, input$disp)
     }
     
-    # Come back to this, make the output an R Markdown file
-    # Should store results as a dictionary of the function/variable and the result
-    output$stat_results <- renderText({paste0("Central Tendency", centen_results,
-                                                "Dispersion", disp_results)})
+  
+    output$stat_results <- renderPrint({ centen_results })
+    
+    output$disp_results <- renderPrint({ disp_results })
 
   })
   

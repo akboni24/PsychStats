@@ -275,40 +275,64 @@ uniEMCalc <- function(vars, ciAdj, model, col2, col3) {
 }
 
 # Helper Functions for Test for Simple Effects ---------------------------------
-anova_se <- function(anova_data, factor, dep) {
-  dependent_var <- anova_data %>% pull(dep)
-  other_factor <- as.factor(anova_data %>% pull(factor))
-  y <- lm(dependent_var ~ sefactor, data=anova_data)
-  summary(aov(y))
-}
-
-test_simple_effects <- function(anova_data, x, y, sefactor) {
-  # Calculates a test of simple effects for Two Way ANOVA
-  # Arguments: anova_data (df), x (factor for anova), dep (dependent variable name),
-  # sefactor (factor to split data on)
-  # ------------------------------------------------------------------------------
-  se_factor <- as.factor(anova_data %>% pull(sefactor))
-  dfs <- split(anova_data, sefactor)
-  se_results <- lapply(dfs, anova_se, factor=x, dep=y)
-}
+# anova_se <- function(anova_data, factor, dep) {
+#   dependent_var <- anova_data %>% pull(dep)
+#   other_factor <- as.factor(anova_data %>% pull(factor))
+#   y <- lm(dependent_var ~ sefactor, data=anova_data)
+#   summary(aov(y))
+# }
+# 
+# test_simple_effects <- function(anova_data, x, y, sefactor) {
+#   # Calculates a test of simple effects for Two Way ANOVA
+#   # Arguments: anova_data (df), x (factor for anova), dep (dependent variable name),
+#   # sefactor (factor to split data on)
+#   # ------------------------------------------------------------------------------
+#   se_factor <- as.factor(anova_data %>% pull(sefactor))
+#   dfs <- split(anova_data, sefactor)
+#   se_results <- lapply(dfs, anova_se, factor=x, dep=y)
+# }
 
 
 # Functions for One Way Within Subjects ANOVA ----------------------------------
 one_way_data <- function(data, within, name, vars) {
-  key=paste(name)
+  #' Converts data from wide format to long format for one way within ANOVA
+  #' 
+  #' Parameters:
+  #' -----------
+  #' data. data frame in wide format
+  #' within. list of the levels of the within subj factors (columns of data)
+  #' name. character vector representing the name of the within subj factor
+  #' vars. list of all variables needed for analysis
+  #' 
+  #' Returns:
+  #' --------
+  #' data_prepared. data frame in long format
+  #' ---------------------------------------------------------------------------
   new_data <- data %>% dplyr::select(one_of(vars))
+  # gather all levels of within subj variable into one variable
   data_prepared <- new_data %>%
     gather(key=key, value="dependent_var", within) %>%
     convert_as_factor(key)
   
-  
+  # make sure name of the variable is what user entered
   names(data_prepared)[names(data_prepared) == 'key'] <- name
   
   data_prepared
 }
 
 one_way_within <- function(data_prepared, effectSizes, w_name) {
-  
+  #' Conduct a one way within subjects ANOVA
+  #' 
+  #' Parameters:
+  #' -----------
+  #' data_prepared. data frame in long format
+  #' effectSizes. boolean representing whether user want effect sizes calculated
+  #' w_name. character vector representing name of within subj factor
+  #' 
+  #' Returns:
+  #' --------
+  #' aov object
+  #' ---------------------------------------------------------------------------
   if (effectSizes == TRUE) {
     anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
                            within = w_name, data=data_prepared, es="pes")
@@ -430,6 +454,15 @@ two_way_posthoc <- function(data, dep, vars, eva) {
 }
 
 ci_bound_lower <- function(var) {
+  #' Calculates lower bound of a 95% confidence interval
+  #' 
+  #' Parameters:
+  #' -----------
+  #' var. data variable
+  #' 
+  #' Returns:
+  #' --------
+  #' float
   mean <- mean(var)
   se <- stderror(var)
   ci <- mean - (1.96*se)
@@ -437,46 +470,57 @@ ci_bound_lower <- function(var) {
 }
 
 ci_bound_upper <- function(var) {
+  #' Calculates upper bound of a 95% confidence interval
+  #' 
+  #' Parameters:
+  #' -----------
+  #' var. data variable
+  #' 
+  #' Returns:
+  #' --------
+  #' float
   mean <- mean(var)
   se <- stderror(var)
   ci <- mean + (1.96*se)
   ci
 }
 
-emmeans_descr <- function(data, dep_name, var_name=NULL, levels = TRUE) {
-  
+emmeans_descr <- function(data, dep_name) {
+  #' Calculates overall grand mean summary statistics
+  #' 
+  #' Parameters:
+  #' -----------
+  #' data. data frame in long format
+  #' dep_name. character vector, name of dependent variable
+  #' 
+  #' Returns:
+  #' --------
+  #' data frame of grand mean summary statistics
+  #' ---------------------------------------------------------------------------
   dep <- data %>% pull(dep_name)
-  # If levels is false, calculate the grand mean
-  if (levels == FALSE) {
-    Mean <- mean(dep)
-    Std.Error <- stderror(dep)
-    Lower.Bound <- Mean - (1.96*Std.Error)
-    Upper.Bound <- Mean + (1.96*Std.Error)
-    df <- data.frame(Mean, Std.Error, Lower.Bound, Upper.Bound)
-  } else {     # Otherwise, split factor by levels
-    var <- data %>% pull(var_name) %>% as.factor()
-    Factor.Levels <- levels(var)
-    Mean <- descr_helper(dep, var, mean)
-    Std.Error <- descr_helper(dep, var, stderror)
-    Lower.Bound <- descr_helper(dep, var, ci_bound_lower)
-    Upper.Bound <- descr_helper(dep, var, ci_bound_upper)
-    df <- data.frame(Factor.Levels, Mean, Std.Error, Lower.Bound, Upper.Bound)
-    names(df)[1] <- var_name
-  }
-  
+  Mean <- mean(dep)
+  Std.Error <- stderror(dep)
+  Lower.Bound <- Mean - (1.96*Std.Error)
+  Upper.Bound <- Mean + (1.96*Std.Error)
+  df <- data.frame(Mean, Std.Error, Lower.Bound, Upper.Bound)
   df
   
 }
 
-two_emmeans <- function(data, dep_name, var_name, split_by) {
-  factor <- as.factor(data %>% pull(split_by))
-  dfs <- split(data, factor)
-  final_dfs <- lapply(dfs, FUN=emmeans_descr, dep_name, var_name)
-  final_dfs
-}
-
 
 levenes_helper <- function(data, dep, group) {
+  #' Helper function for mixed_levenes
+  #' 
+  #' Parameters:
+  #' -----------
+  #' data. data frame in long format
+  #' dep. name of dependent variable
+  #' group. name of grouping variable
+  #' 
+  #' Returns:
+  #' --------
+  #' leveneTest object
+  #' ---------------------------------------------------------------------------
   dependent_var <- data %>% pull(dep)
   grouping <- data %>% pull(group) %>% as.factor()
   result <- leveneTest(y=dependent_var, group=grouping, center=mean)
@@ -484,6 +528,20 @@ levenes_helper <- function(data, dep, group) {
 }
 
 mixed_levenes <- function(data, dep_name, between, within) {
+  #' Conducts levenes test for homogeneity of variance on a dataframe split by 
+  #' the levels of the within subjects factor for mixed ANOVA
+  #' 
+  #' Parameters:
+  #' -----------
+  #' data. data frame in long format
+  #' dep_name. name of dependent variable
+  #' between. name of between subjects factor
+  #' within. name of within subjects factor
+  #' 
+  #' Returns:
+  #' --------
+  #' list of leveneTest objects
+  #' ---------------------------------------------------------------------------
   factor <- data %>% pull(within) %>% as.factor()
   dfs <- split(data, factor)
   levenes <- lapply(dfs, FUN=levenes_helper, dep=dep_name, group=between)

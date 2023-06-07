@@ -5,11 +5,22 @@ library(sortable)
 library(ggpubr)
 library(emmeans)
 
+# This file contains some helper functions for the main page, as well as functions
+# for frequencies and descriptives in the Analyze tab
+
 # Helper function for main page ------------------------------------------------
 load_file <- function(name, path) {
   #'Loads the given csv file and turns it into a dataframe
-  #' Arguments: name (filename) and path (file path)
-  #' Returns: a dataframe object
+  #'
+  #' Parameters:
+  #' -----------
+  #' name. character vector, filename
+  #' path. character vector, file path
+  #' 
+  #' Returns:
+  #' -------- 
+  #' dataframe
+  #' ---------------------------------------------------------------------------
   ext <- tools::file_ext(name)
   switch(ext,
        csv = vroom::vroom(path, delim = ","),
@@ -18,18 +29,34 @@ load_file <- function(name, path) {
 
 # Helper function - find_vars() ------------------------------------------------
 find_vars <- function(data) {
-  #'Extracts the variable names from the given dataset
-  #'Arguments: data (a dataframe object)
-  #'Returns: a character vector of variable names
+  #' Extracts the variable names from the given dataset
+  #'
+  #' Parameters:
+  #' -----------
+  #' data. dataframe object
+  #' 
+  #' Returns:
+  #' ---------
+  #' character vector of variable names
+  #' ---------------------------------------------------------------------------
   stopifnot(is.data.frame(data))
   names(data)
 }
 
+
 # Helper function - extractCols() ----------------------------------------------
 extractCols <- function(vars, data, func = NULL) {
   #' Extract columns of data based on variable names selected
-  #' Arguments: vars (a list of variable names) and data (a dataframe)
-  #' Returns: a dataframe object
+  #' 
+  #' Parameters:
+  #' ----------- 
+  #' vars. list of variable names
+  #' data. dataframe
+  #' 
+  #' Returns:
+  #' --------
+  #' dataframe object
+  #' ---------------------------------------------------------------------------
   stopifnot(is.data.frame(data))
   cols <- data %>% subset(select=vars)
 }
@@ -37,8 +64,17 @@ extractCols <- function(vars, data, func = NULL) {
 # Helper function - extractCols() ----------------------------------------------
 check_condition <- function(var, data, func) {
   #' Check a certain condition on a selected data variable
-  #' Arguments: var (str), data (dataframe), and func (str function name)
-  #' Returns: result of function (probably boolean)
+  #' 
+  #' Parameters:
+  #' -----------
+  #' var. name of data variable 
+  #' data. dataframe 
+  #' func. function name
+  #' 
+  #' Returns:
+  #' -------- 
+  #' boolean
+  #' ---------------------------------------------------------------------------
   col <- data %>% pull(var)
   condition <- func(col)
   return(condition)
@@ -47,9 +83,17 @@ check_condition <- function(var, data, func) {
 
 # Helper function - errorText() ------------------------------------------------
 error_text <- function(wrong_var_type, right_var_type) {
-  #' Just creates error text string for when user selects wrong type of variable
-  #' Arguments: wrong_var_type (str), right_var_type (str)
-  #' Returns: str
+  #' Creates error text string for when user selects wrong type of variable
+  #' 
+  #' Parameters:
+  #' -----------
+  #' wrong_var_type. string 
+  #' right_var_type. string
+  #' 
+  #' Returns:
+  #' -------- 
+  #' string
+  #' ---------------------------------------------------------------------------
   error_text <- sprintf("You cannot conduct this type of statistical test on a %s 
   variable. Please select a %s variable.", wrong_var_type, right_var_type)
   return(error_text)
@@ -57,47 +101,25 @@ error_text <- function(wrong_var_type, right_var_type) {
 
 factor_warning <- function(var_name) {
   #' Creates some warning text to make sure the user selected a factor
-  #' Arguments: var_name (str, name of variable selected as factor)
-  #' Returns: str
+  #' 
+  #' Parameters:
+  #' -----------
+  #' var_name. str, name of variable selected as factor
+  #' 
+  #' Returns:
+  #' ---------
+  #' string
+  #' ---------------------------------------------------------------------------
   warning_text <- sprintf("Reminder: Make sure %s is a factor/categorical variable
                           before interpreting the following results.", var_name)
   return(warning_text)
 }
 
-
-# Helper function - makeFactor() ----------------------------------------------
-# Turns a give variable into a factor
-# Arguments: var (variable name) and data (a dataframe)
-# Returns: Nothing
-# ------------------------------------------------------------------------------
-#makeFactor <- function(vars, data) {
- # df[vars] <- lapply(df[vars] , factor)
-#}
-
-# Helper function - checkFactor() ----------------------------------------------
-# Checks if every given variable is a categorical variable
-# Arguments: vars (list of variable names)
-# Returns: Boolean
-# ------------------------------------------------------------------------------
-checkFactor <- function(var, data) {
-  col <- data %>% subset(select=var)
-  is.factor(col)
-}
-
-# Helper function - checkNumeric() ----------------------------------------------
-# Checks if every given variable is a numeric variable
-# Arguments: vars (list of variable names)
-# Returns: Boolean
-# ------------------------------------------------------------------------------
-checkNumeric <- function(var, data) {
-  col <- data %>% subset(select=var)
-  return(is.numeric(col))
-}
-
-
 # Statistics Modal Function ----------------------------------------------------
 statsModal <- function(input, output, session) {
-  #' Creates a modal (pop-up window) that asks for user input of what stats they want to be calculated
+  #' Creates a modal (pop-up window) that asks for user input of what stats 
+  #' they want to be calculated
+  #' 
   #' Arguments: Shiny arguments input, output, and session
   #' ---------------------------------------------------------------------------
   ns <- session$ns
@@ -110,7 +132,6 @@ statsModal <- function(input, output, session) {
                       "Median", "Mode", "Sum")),
     checkboxGroupInput(ns("disp"), label = "Dispersion", c("Std. Deviation", 
                                   "Variance", "Range", "Minimum", "Maximum")),
-    checkboxGroupInput(ns("dist"), label = "Distribution", c("Skewness", "Kurtosis")),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
   )
   
@@ -118,7 +139,9 @@ statsModal <- function(input, output, session) {
 
 # Statistics Modal Function ----------------------------------------------------
 freqChartsModal <- function(input, output, session) {
-  #' Creates a modal (pop-up window) that asks for user input of what stats they want to be calculated
+  #' Creates a modal (pop-up window) that asks for user input of what stats 
+  #' they want to be calculated
+  #' 
   #' Arguments: Shiny arguments input, output, and session
   #' ---------------------------------------------------------------------------
   ns <- session$ns
@@ -146,39 +169,52 @@ disp <- function(session) {
     c("Std. Deviation", "Variance", "Range", "Minimum", "Maximum", "S.E. Mean"))
 }
 
+mode <- function(x) {
+            uniqx <- unique(x)
+            uniqx[which.max(tabulate(match(x, uniqx)))]
+          }
 
 # Helper function - centraltendency() ------------------------------------------
-centraltendency <- function(cols, func) {
+centraltendency <- function(var, func) {
   #' Calculates measures of central tendency on a group of variables
-  #' Arguments: cols (dataframe columns) and func (list of functions to calculate)
-  #' Returns: results, a list of the calculated values
-  results <- list()
-  # use lapply to apply each function selected to each variable chosen
+  #' 
+  #' Parameters:
+  #' -----------
+  #' var. data variable
+  #' func. list of functions to calculate
+  #' 
+  #' Returns:
+  #' --------
+  #' dataframe containing the calculated statistics
+  #' ---------------------------------------------------------------------------
   if ("Mean" %in% func) {
-    means <- lapply(cols, mean)
-    results <- append(results, means)
+    Mean <- mean(var)
+  } else {
+    Mean <- c()
   }
   
   if ("Median" %in% func) {
-    medians <- lapply(cols, median)
-    results <- append(results, medians)
+    Median <- median(var)
+  } else {
+    Median <- c()
   }
   
   if ("Mode" %in% func) {
     # Have to create own mode function
-    modes <- lapply(cols, function(x) {
-      uniqx <- unique(x)
-      uniqx[which.max(tabulate(match(x, uniqx)))]
-    })
-    results <- append(results, modes)
+    Mode <- mode(var)
+  } else {
+    Mode <- c()
   }
   
   if ("Sum" %in% func) {
-    sums <- lapply(cols, sum)
-    results <- append(results, sums)
+    Sum <- sum(var)
+  } else {
+    Sum <- c()
   }
   
-  results
+  df <- data.frame(Mean, Median, Mode, Sum)
+  names(df)[1] <- vars_name
+  df
 
 }
 
@@ -186,8 +222,14 @@ centraltendency <- function(cols, func) {
 dispersion <- function(cols, func) {
   #' Calculates measures of dispersion on a group of variables
   #' 
-  #' Arguments: cols (dataframe columns) and func (list of functions to calculate)
-  #' Returns: results, a list of the calculated values
+  #' Parameters:
+  #' -----------
+  #' cols. data variable
+  #' func. list of functions to calculate
+  #' 
+  #' Returns:
+  #' --------
+  #' dataframe containing the calculated statistics
   #' ----------------------------------------------------------------------------
   results <- list()
   # use lapply to apply each function selected to each variable chosen
@@ -240,7 +282,6 @@ descOptionsModal <- function(input, output, session) {
     title = "Descriptives: Options",
     checkboxGroupInput(ns("desc"), label = NULL, c("Mean", "Sum"), selected = "Mean"),
     disp(session),
-    checkboxGroupInput(ns("dist"), label = "Distribution", c("Skewness", "Kurtosis")),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
   )
   
@@ -257,17 +298,22 @@ ttestOptionsModal <- function(input, output, session) {
   modalDialog(
     title = "T Test: Options",
     numericInput(ns("confint"), label = "Confidence Interval Percentage: ", value = "0.95"),
-    radioButtons(ns("mv"), label = "Missing Values", 
-                 choices = list("Exclude cases analysis by analysis" = 1, "Exclude cases listwise" = 2), selected = 1),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
   )
 }
 
 # Statistic Calculations for T Tests -------------------------------------------
 ttestStats <- function(var1, var2 = NULL) {
-  #' Calculates one and two sample statistics for t tests
+  #' Calculates one sample or paired samples statistics for t tests
   #' 
-  #' Arguments: cols (columns of data)
+  #' Parameters:
+  #' -----------
+  #' var1. data variable
+  #' var2. data variable or NULL if conducting one sample stats
+  #' 
+  #' Returns:
+  #' --------
+  #' dataframe containing all summary statistics
   #' ---------------------------------------------------------------------------
   df <- data.frame( "Variable Name" = character(),
                     "N" = numeric(),
@@ -292,9 +338,16 @@ ttestStats <- function(var1, var2 = NULL) {
 
 
 indttestStats <- function(var1, var2) {
-  #' Calculates one and two sample statistics for t tests
+  #' Calculates two sample statistics for t tests
   #' 
-  #' Arguments: cols (columns of data)
+  #' Parameters:
+  #' -----------
+  #' var1. data variable
+  #' var2. data variable
+  #' 
+  #' Returns:
+  #' --------
+  #' dataframe containing all summary statistics
   #' ---------------------------------------------------------------------------
   df <- data.frame( "Variable Name" = character(),
                     "N" = numeric(),

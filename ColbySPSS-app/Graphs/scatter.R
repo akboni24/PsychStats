@@ -10,7 +10,7 @@ scatterUI <- function(id) {
   tagList (
     tags$head(
       tags$style(HTML(".bucket-list-container {min-height: 350px;}"))),
-    
+    useShinyjs(),
     titlePanel("Simple Scatter"),
     
     # Creates two drag and drop buckets
@@ -73,6 +73,10 @@ scatterServer <- function(id, data) {
         ))
       
     })
+    
+    observe({ 
+      toggleState(id="ok", 
+      condition=length(input$rank_list_2)==1&&length(input$rank_list_3==1)) })
     
     # Show plot, post hoc, and options modals if selected ----------------------
     observeEvent(input$titles, {
