@@ -4,6 +4,7 @@ library(car)
 library(sortable)
 library(ggpubr)
 library(emmeans)
+library(ggplot2)
 
 # This file contains some helper functions for the main page, as well as functions
 # for frequencies and descriptives in the Analyze tab
@@ -137,10 +138,10 @@ statsModal <- function(input, output, session) {
   
 }
 
-# Statistics Modal Function ----------------------------------------------------
+# Charts Modal Function --------------------------------------------------------
 freqChartsModal <- function(input, output, session) {
-  #' Creates a modal (pop-up window) that asks for user input of what stats 
-  #' they want to be calculated
+  #' Creates a modal (pop-up window) that asks for user input of what type of 
+  #' chart they want to be created
   #' 
   #' Arguments: Shiny arguments input, output, and session
   #' ---------------------------------------------------------------------------
@@ -148,16 +149,93 @@ freqChartsModal <- function(input, output, session) {
   # Create the pop-up window
   modalDialog(
     title = "Frequencies: Charts",
-    radioButtons(ns("type"), label="Chart Type", c("None", "Bar Charts", 
-                "Pie Charts", "Histograms"), selected = "None"),
-    checkboxInput(ns("normal"), label="Show normal curve on histogram", 
-                  value=FALSE),
+    radioButtons(ns("type"), label="Chart Type", c("Bar Chart", 
+                "Pie Chart"), selected = "Bar Chart"),
     radioButtons(ns("values"), label="Chart Values", c("Frequencies", "Percentages"),
                  selected="Frequencies"),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
   )
   
 }
+
+# if (type == "Histogram") {
+#   
+#   if (values == "Percentages") {
+#     #chart <- hist(var, freq=FALSE, plot=FALSE)
+#     #chart$density <- chart$counts / sum(chart$counts) * 100
+#     if (normal == TRUE){
+#       chart <- ggplot(var, aes(x=stat)) +
+#         geom_histogram(aes(y=stat(density))) + 
+#         scale_y_continuous(labels=scales::percent_format())
+#     } else {
+#       chart <- ggplot(var, aes(x=stat)) +
+#         geom_histogram(aes(y=stat(density))) + 
+#         scale_y_continuous(labels=scales::percent_format()) +
+#         stat_function(fun=dnorm, args=list(mean=mean(var), sd=sd(var)))
+#     }
+#   } else {
+#     if (normal == TRUE) {
+#       chart <- ggplot(var, aes(x)) +
+#         geom_histogram() + 
+#         stat_function(fun=dnorm, args=list(mean=mean(var), sd=sd(var)))
+#     } else {
+#       chart <- ggplot(data, aes(var)) +
+#         geom_histogram()
+#     }
+#   }
+
+# Frequency Charts Generator Function ------------------------------------------
+freqCharts <- function(data, var, type, values) {
+  
+  if (type == "Bar Chart") {
+    
+    if (values == "Percentages") {
+      chart <- ggplot(data, aes(var)) +
+                  geom_bar(aes(y=(after_stat(count))/sum(after_stat(count)))) +
+                  scale_y_continuous(labels = scales::percent) +
+                  ylab("Percentages") 
+    } else {
+      chart <- ggplot(data, aes(var)) +
+                geom_bar() +
+                ylab("Frequency")
+    }
+    
+  } else if (type == "Pie Chart") {
+    
+    if (values == "Percentages") {
+      chart <- ggplot(data, aes(x=factor(1), fill=var)) +
+        geom_bar(aes(y=(after_stat(count))/sum(after_stat(count))), width=1) +
+        coord_polar("y") +
+        scale_y_continuous(labels = scales::percent) +
+        ylab("Percentages") 
+    } else {
+      chart <- ggplot(data, aes(x=factor(1), fill=var)) +
+        geom_bar(width=1) +
+        coord_polar("y")
+        ylab("Frequency")
+    }
+  }
+  
+  chart <- chart +
+            xlab(names(var)) +
+            guides(color = guide_legend(override.aes=list(shape = 20))) +
+            theme(axis.line = element_line(colour = "black"),
+                  plot.margin=grid::unit(c(5,85,5,5), "mm"),
+                  axis.line.x.bottom=element_line(linewidth=0.5),
+                  axis.line.y.left=element_line(linewidth=0.5),
+                  axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)),
+                  panel.grid.major = element_blank(),
+                  panel.grid.minor = element_blank(),
+                  panel.border = element_blank(),
+                  panel.background = element_blank(),
+                  plot.title = element_text(hjust = 0.5,size = 30, face = "bold"),
+                  axis.text.x = element_text(color="black"),
+                  axis.text.y = element_text(color="black"),
+                  axis.ticks = element_line(color = "black"))  
+  
+  return(chart)
+}
+
 
 # Dispersion Function ----------------------------------------------------------
 disp <- function(session) {
@@ -190,30 +268,30 @@ centraltendency <- function(var, func) {
   if ("Mean" %in% func) {
     Mean <- mean(var)
   } else {
-    Mean <- c()
+    Mean <- "Not Calculated"
   }
   
   if ("Median" %in% func) {
     Median <- median(var)
   } else {
-    Median <- c()
+    Median <- "Not Calculated"
   }
   
   if ("Mode" %in% func) {
     # Have to create own mode function
     Mode <- mode(var)
   } else {
-    Mode <- c()
+    Mode <- "Not Calculated"
   }
   
   if ("Sum" %in% func) {
     Sum <- sum(var)
   } else {
-    Sum <- c()
+    Sum <- "Not Calculated"
   }
   
   df <- data.frame(Mean, Median, Mode, Sum)
-  names(df)[1] <- vars_name
+  names(df)[1] <- names(var)
   df
 
 }

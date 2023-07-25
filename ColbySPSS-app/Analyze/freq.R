@@ -23,7 +23,6 @@ freqUI <- function(id) {
       column(
         # Buttons
         width = 4,
-        actionButton(ns("stat"), "Statistics"),
         actionButton(ns("chart"), "Charts")
       )
     ), 
@@ -44,13 +43,12 @@ freqUI <- function(id) {
     fluidRow (
       column (
         width = 10,
+        span(textOutput(ns("errors")), style="color:red"),
+        textOutput(ns("warning")),
         h3("Frequency Table"),
-        tableOutput(ns("frequencies")),
-        h3("Statistics"),
-        h5("Central Tendency"),
-        verbatimTextOutput(ns("stat_results")),
-        h5("Dispersion"),
-        verbatimTextOutput(ns("chart_results")),
+        verbatimTextOutput(ns("frequencies")),
+        h3("Charts"),
+        plotOutput(ns("chart_results"))
       )
     )
     
@@ -70,7 +68,7 @@ freqServer <- function(id, data) {
     output$sortable <- renderUI({
       ns <- NS(id)
       bucket_list(
-        header = "Drag the items in any desired bucket",
+        header = "Drag over the categorical variable you would like to calculate frequencies for:",
         group_name = "bucket_list_group",
         orientation = "horizontal",
         add_rank_list(
@@ -89,14 +87,6 @@ freqServer <- function(id, data) {
   observe({ toggleState(id="ok", condition=length(input$rank_list_2) == 1) })
   
   # Display pop-up menus if selected -------------------------------------------
-  observeEvent(input$stat, {
-    showModal(statsModal(input, output, session))
-  })
-  
-  observeEvent(input$submit, {
-    removeModal()
-  })
-  
   observeEvent(input$chart, {
     showModal(freqChartsModal(input, output, session))
   })
@@ -108,35 +98,38 @@ freqServer <- function(id, data) {
   # Wait for the user to hit submit --------------------------------------------
   observeEvent(input$ok, {
     
-    # Extract variables
-    cols <- extractCols(input$rank_list_2, data())
+    # Extract variables --------------------------------------------------------
+    var <- data() %>% pull(input$rank_list_2) %>% as.factor()
+    
+    factor <- check_condition(input$rank_list_2, data(), is.numeric)
+    
+    # Display warning if chosen factor variable is numeric ---------------------
+    if (factor == TRUE) {
+      output$warning <- renderText({factor_warning(input$rank_list_3)})
+    }
     
     # Calculate frequencies ----------------------------------------------------
     if (input$apa == TRUE) {
-      results <- tab1(cols, cum.percent = FALSE)
+      results <- tab1(var, cum.percent = FALSE)
     } else {
-      results <- tab1(cols, cum.percent=TRUE)
+      results <- tab1(var, cum.percent=TRUE)
     }
     
-    output$frequencies <- renderTable({results})
+    output$frequencies <- renderPrint({print(results)})
     
-    # Calculate chosen statistics ----------------------------------------------
-    # Central Tendency
-    centen_results <- NULL
-    if (!is.null(input$centen)) {
-      centen_results <- centraltendency(cols, input$centen)
+
+    # Plot Charts --------------------------------------------------------------
+    if (!is.null(input$chart)) {
+      
+        if (!is.null(input$type)) {
+          
+          chart <- freqCharts(data(), var, input$type, input$values)
+          
+          output$chart_results <- renderPlot({chart})
+          
+        }
+        
     }
-    
-    # Dispersion
-    disp_results <- NULL
-    if (!is.null(input$disp)) {
-      disp_results <- dispersion(cols, input$disp)
-    }
-    
-  
-    output$stat_results <- renderPrint({ centen_results })
-    
-    output$disp_results <- renderPrint({ disp_results })
 
   })
   

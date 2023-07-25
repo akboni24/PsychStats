@@ -94,10 +94,6 @@ server <- function(input, output, session) {
     )
   })
   
-  # Updates the checkboxGroupInput with all of the variable names
-  #observeEvent(input$file1, {
-    #updateCheckboxGroupInput(session, "factors", choices = find_vars(df()))
-  #})
   
   
   # will need to include a call to all of the server functions of my separate module
