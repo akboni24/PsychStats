@@ -20,9 +20,7 @@ descriptivesUI <- function(id) {
       column(
         # Buttons
         width = 4,
-        actionButton(ns("options"), "Options"),
-        actionButton(ns("style"), "Style"),
-        actionButton(ns("bootstrap"), "Bootstrap")
+        actionButton(ns("options"), "Options")
       )
     ), 
     fluidRow(
@@ -102,11 +100,16 @@ descriptivesServer <- function(id, data) {
       
         # Descriptives ---------------------------------------------------------
         descriptives <- lapply(cols, summary)
+        output$results <- renderPrint({descriptives})
         
         # Central Tendency -----------------------------------------------------
         centen_results <- NULL
         if (!is.null(input$desc)) {
           centen_results <- centraltendency(cols, input$desc)
+        }
+        
+        if (!is.null(centen_results)) {
+          output$centResults <- renderPrint({centen_results})
         }
         
         # Dispersion -----------------------------------------------------------
@@ -115,13 +118,6 @@ descriptivesServer <- function(id, data) {
           disp_results <- dispersion(cols, input$disp)
         }
         
-        # Come back to this, make the output an R Markdown file
-        # Should store results as a dictionary of the function/variable and the result
-        output$results <- renderPrint({descriptives})
-        
-        if (!is.null(centen_results)) {
-          output$centResults <- renderPrint({centen_results})
-        }
         if (!is.null(disp_results)) {
           output$dispResults <- renderPrint({disp_results})
         }

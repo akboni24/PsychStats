@@ -266,35 +266,26 @@ centraltendency <- function(var, func) {
   #' dataframe containing the calculated statistics
   #' ---------------------------------------------------------------------------
   if ("Mean" %in% func) {
-    Mean <- mean(var)
+    Mean <- sapply(var, mean)
   } else {
-    Mean <- "Not Calculated"
-  }
-  
-  if ("Median" %in% func) {
-    Median <- median(var)
-  } else {
-    Median <- "Not Calculated"
-  }
-  
-  if ("Mode" %in% func) {
-    # Have to create own mode function
-    Mode <- mode(var)
-  } else {
-    Mode <- "Not Calculated"
+    Mean <- "NA"
   }
   
   if ("Sum" %in% func) {
-    Sum <- sum(var)
+    Sum <- sapply(var, sum)
   } else {
-    Sum <- "Not Calculated"
+    Sum <- "NA"
   }
   
-  df <- data.frame(Mean, Median, Mode, Sum)
-  names(df)[1] <- names(var)
+  
+  df <- data.frame(Mean, Sum, row.names=names(var))
+  
   df
 
 }
+
+stderror <- function(x) sd(x)/sqrt(length(x))
+my_range <- function(x) max(x) - min(x)
 
 # Helper function - dispersion() -----------------------------------------------
 dispersion <- function(cols, func) {
@@ -309,41 +300,47 @@ dispersion <- function(cols, func) {
   #' --------
   #' dataframe containing the calculated statistics
   #' ----------------------------------------------------------------------------
-  results <- list()
+
   # use lapply to apply each function selected to each variable chosen
   if ("Std. Deviation" %in% func) {
-    std <- lapply(cols, sd)
-    results <- append(results, std)
+    Std.Dev <- sapply(cols, sd)
+  } else {
+    Std.Dev <- "NA"
   }
   
   if ("Variance" %in% func) {
-    variances <- lapply(cols, var)
-    results <- append(results, variances)
+    Variance <- sapply(cols, var)
+  } else {
+    Variance <- "NA"
   }
   
   if ("Range" %in% func) {
-    # Have to create own mode function
-    ranges <- lapply(cols, range)
-    results <- append(results, ranges)
+    Range <- sapply(cols, my_range)
+  } else {
+    Range <- "NA"
   }
   
   if ("Minimum" %in% func) {
-    mins <- lapply(cols, min)
-    results <- append(results, mins)
+    Min <- sapply(cols, min)
+  } else {
+    Min <- "NA"
   }
   
   if ("Maximum" %in% func) {
-    maxs <- lapply(cols, max)
-    results <- append(results, maxs)
+    Max <- sapply(cols, max)
+  } else {
+    Max <- "NA"
   }
-  
+
   if ("S.E. Mean" %in% func) {
-    stderror <- function(x) sd(x)/sqrt(length(x))
-    se <- lapply(cols, stderror)
-    results <- append(results, se)
+    SE <- sapply(cols, stderror)
+  } else {
+    SE <- "NA"
   }
   
-  results
+  df <- data.frame(Std.Dev, Variance, Range, Min, Max, SE, row.names=names(cols))
+
+  df
   
 }
 
