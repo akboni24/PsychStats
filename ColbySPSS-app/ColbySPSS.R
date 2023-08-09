@@ -49,7 +49,6 @@ ui <- navbarPage(
              tabPanel("Frequencies", fluidPage(freqUI("freq"))),
              tabPanel("Descriptives", fluidPage(descriptivesUI("desc"))),
              "Compare Means",
-             tabPanel("Means", "m"),
              tabPanel("One Sample T Test", fluidPage(oneSampleTUI("oneT"))),
              tabPanel("Ind Samples T Test", fluidPage(indSamplesTUI("indT"))),
              tabPanel("Paired Samples T Test", fluidPage(pairedSamplesTUI("pT"))),

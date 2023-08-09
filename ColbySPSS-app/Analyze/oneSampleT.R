@@ -52,7 +52,7 @@ oneSampleTUI <- function(id) {
         h5("One-Sample Statistics"),
         tableOutput(ns("descr")),
         h5("One-Sample Test"),
-        tableOutput(ns("results")),
+        verbatimTextOutput(ns("results")),
         h5("Effect Sizes"),
         verbatimTextOutput(ns("esResults")),
         downloadButton(ns("report"), label = "Generate PDF")
@@ -141,7 +141,7 @@ oneSampleTServer <- function(id, data) {
         results_df <- nice_t_test(data=data(), response=input$rank_list_2,
                                   mu=input$testValue, conf.level = confint)
 
-        output$results <- renderTable({results_df})
+        output$results <- renderPrint({results_df})
         
         # Generate the downloadable pdf report ---------------------------------
         params <- list(descr = descriptives, results = results_df)

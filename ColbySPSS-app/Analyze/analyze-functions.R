@@ -372,7 +372,8 @@ ttestOptionsModal <- function(input, output, session) {
   # Create the pop-up window
   modalDialog(
     title = "T Test: Options",
-    numericInput(ns("confint"), label = "Confidence Interval Percentage: ", value = "0.95"),
+    numericInput(ns("confint"), label = "Confidence Interval Percentage: ", 
+                 value = "0.95", min=0.01, max=0.99, step=0.01),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
   )
 }
