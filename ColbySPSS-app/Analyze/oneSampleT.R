@@ -137,9 +137,10 @@ oneSampleTServer <- function(id, data) {
           d <- "Not calculated"
         }
         
+        x <- data() %>% pull(input$rank_list_2)
         # Conduct the one sample t test ----------------------------------------
-        results_df <- nice_t_test(data=data(), response=input$rank_list_2,
-                                  mu=input$testValue, conf.level = confint)
+        results_df <- t.test(x=x, mu=input$testValue, 
+                             conf.level = confint)
 
         output$results <- renderPrint({results_df})
         

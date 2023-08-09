@@ -14,6 +14,7 @@ library(dplyr)
 library(knitr)
 library(rempsyc)
 library(flextable)
+library(tidystats)
 set_flextable_defaults(fonts_ignore = TRUE)
 ```
 
@@ -28,5 +29,5 @@ kable(params$descr)
 ### One-Sample Test
 
 ```{r}
-kable(params$results)
+params$results
 ```
