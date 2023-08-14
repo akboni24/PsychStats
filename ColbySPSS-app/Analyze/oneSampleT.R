@@ -103,6 +103,11 @@ oneSampleTServer <- function(id, data) {
     # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
+      # Clear all previous outputs ---------------------------------------------
+      output$descr <- renderTable({c()})
+      output$results <- renderPrint({c()})
+      output$esResults <- renderPrint({c()})
+      
       # Extract the variable from the data -------------------------------------
       col <- data() %>% pull(input$rank_list_2)
       

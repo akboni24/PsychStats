@@ -42,7 +42,7 @@ kable(params$l)
 ```{r}
 df1 <- map_df(list(params$results1), tidy)
 df1 <- df1[c("estimate", "statistic", "p.value", "conf.low", "conf.high")]
-colnames(df1) <- c("Estimate", "t", "p value", "Conf. Int. (low)", "Conf. Int. (high)")
+colnames(df1) <- c("Estimate", "t", "p value", "Conf.Int.Low", "Conf.Int.High")
 kable(df1)
 ```
 
@@ -51,7 +51,7 @@ kable(df1)
 ```{r}
 df2 <- map_df(list(params$results2), tidy)
 df2 <- df2[c("estimate", "statistic", "p.value", "conf.low", "conf.high")]
-colnames(df2) <- c("Estimate", "t", "p value", "Conf.Int.(low)", "Conf.Int.(high)")
+colnames(df2) <- c("Estimate", "t", "p value", "Conf.Int.Low", "Conf.Int.High")
 kable(df2)
 ```
 

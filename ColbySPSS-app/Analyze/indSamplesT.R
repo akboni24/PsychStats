@@ -121,6 +121,13 @@ indSamplesTServer <- function(id, data) {
       # Otherwise calculate the the t test and display the results -------------
       } else {
         
+        # Clear all previous outputs -------------------------------------------
+        output$descr <- renderTable({c()})
+        output$levene <- renderPrint({c()})
+        output$results <- renderPrint({c()})
+        output$results2 <- renderPrint({c()})
+        output$esResults <- renderPrint({c()})
+        
         # Grab the confidence interval -----------------------------------------
         if(is.null(input$confint)) {
           confint = 0.95
@@ -132,14 +139,7 @@ indSamplesTServer <- function(id, data) {
         # factor/grouping variable ---------------------------------------------
         var <- data() %>% pull(input$rank_list_2)
         grouping <- data() %>% pull(input$rank_list_3) %>% as.factor()
-        
-        # Calculate and display descriptives -----------------------------------
-        descriptives <- indttestStats(var, grouping)
-        
-        output$descr <- renderTable({
-          descriptives
-        })
-        
+      
         
         # Warning if there are more than two groups ----------------------------
         if (nlevels(grouping) > 2) {
@@ -148,11 +148,13 @@ indSamplesTServer <- function(id, data) {
           
         } else {   # Otherwise conduct independent samples test ----------------
           
-          # Clear all previous outputs -----------------------------------------
-          output$levene <- renderPrint({c()})
-          output$results <- renderPrint({c()})
-          output$results2 <- renderPrint({c()})
-          output$esResults <- renderPrint({c()})
+          
+          # Calculate and display descriptives
+          descriptives <- indttestStats(var, grouping)
+          
+          output$descr <- renderTable({
+            descriptives
+          })
           
           # Calculate levene's test for equality of variances
           levenes <- leveneTest(y=var, group=grouping, center=mean)
