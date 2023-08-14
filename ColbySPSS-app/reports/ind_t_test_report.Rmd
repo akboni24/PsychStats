@@ -5,6 +5,7 @@ params:
   descr: NA
   results1: NA
   results2: NA
+  d: NA
   l: NA
 ---
 
@@ -16,6 +17,8 @@ library(dplyr)
 library(knitr)
 library(rempsyc)
 library(flextable)
+library(broom)
+library(purrr)
 set_flextable_defaults(fonts_ignore = TRUE)
 ```
 
@@ -37,11 +40,22 @@ kable(params$l)
 #### Equal Variances Assumed
 
 ```{r}
-kable(params$results1)
+df1 <- map_df(list(params$results1), tidy)
+df1 <- df1[c("estimate", "statistic", "p.value", "conf.low", "conf.high")]
+colnames(df1) <- c("Estimate", "t", "p value", "Conf. Int. (low)", "Conf. Int. (high)")
+kable(df1)
 ```
 
 #### Equal Variances Not Assumed
 
 ```{r}
-kable(params$results2)
+df2 <- map_df(list(params$results2), tidy)
+df2 <- df2[c("estimate", "statistic", "p.value", "conf.low", "conf.high")]
+colnames(df2) <- c("Estimate", "t", "p value", "Conf.Int.(low)", "Conf.Int.(high)")
+kable(df2)
+```
+
+### Effect Sizes
+```{r}
+kable(params$d)
 ```

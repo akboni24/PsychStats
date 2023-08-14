@@ -425,7 +425,7 @@ indttestStats <- function(var1, var2) {
   #' --------
   #' dataframe containing all summary statistics
   #' ---------------------------------------------------------------------------
-  df <- data.frame( "Variable Name" = character(),
+  df <- data.frame( "Groups" = character(),
                     "N" = numeric(),
                     "Mean" = numeric(),
                     "Std.Deviation" = numeric(),

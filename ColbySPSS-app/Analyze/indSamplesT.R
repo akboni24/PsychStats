@@ -48,9 +48,9 @@ indSamplesTUI <- function(id) {
         verbatimTextOutput(ns("levene")),
         h3("Two-Sample Test"),
         h5("Equal Variances Assumed"),
-        tableOutput(ns("results")),
+        verbatimTextOutput(ns("results")),
         h5("Equal Variances Not Assumed"),
-        tableOutput(ns("results2")),
+        verbatimTextOutput(ns("results2")),
         h5("Effect Sizes"),
         verbatimTextOutput(ns("esResults")),
         downloadButton(ns("report"), label = "Generate PDF")
@@ -130,11 +130,11 @@ indSamplesTServer <- function(id, data) {
         
         # Grab each variable: col is dependent variable and grouping is the 
         # factor/grouping variable ---------------------------------------------
-        col <- data() %>% pull(input$rank_list_2)
+        var <- data() %>% pull(input$rank_list_2)
         grouping <- data() %>% pull(input$rank_list_3) %>% as.factor()
         
         # Calculate and display descriptives -----------------------------------
-        descriptives <- indttestStats(col, grouping)
+        descriptives <- indttestStats(var, grouping)
         
         output$descr <- renderTable({
           descriptives
@@ -144,35 +144,38 @@ indSamplesTServer <- function(id, data) {
         # Warning if there are more than two groups ----------------------------
         if (nlevels(grouping) > 2) {
           
-          output$results <- renderText({paste("Grouping variable has more than 2 groups. 
-                            Please select a different variable or conduct a One Way ANOVA.")})
+          output$results <- renderText({paste("Grouping variable has more than 2 groups. Please select a different variable or conduct a One Way ANOVA.")})
           
-        } else{   # Otherwise conduct independent samples test -----------------
+        } else {   # Otherwise conduct independent samples test ----------------
+          
+          # Clear all previous outputs -----------------------------------------
+          output$levene <- renderPrint({c()})
+          output$results <- renderPrint({c()})
+          output$results2 <- renderPrint({c()})
+          output$esResults <- renderPrint({c()})
           
           # Calculate levene's test for equality of variances
-          levenes <- leveneTest(y=col, group=grouping, center=mean)
+          levenes <- leveneTest(y=var, group=grouping, center=mean)
           output$levene <- renderPrint({levenes})
           
           # Calculate t test with both equal variances assumed...
           
-          results1_df <- nice_t_test(data=data(), response=input$rank_list_2,
-                                     group=input$rank_list_3, conf.level = confint,
+          results1_df <- t.test(var ~ grouping, conf.level = confint,
                                      var.equal=TRUE)
           
           # ... and equal variances not assumed
           
-          results2_df <- nice_t_test(data=data(), response=input$rank_list_2,
-                                     group=input$rank_list_3, conf.level = confint,
+          results2_df <- t.test(var ~ grouping, conf.level = confint,
                                      var.equal=FALSE) 
           
           # Display the results in two tables
-          output$results <- renderTable({results1_df})
-          output$results2 <- renderTable({results2_df})
+          output$results <- renderPrint({results1_df})
+          output$results2 <- renderPrint({results2_df})
           
           # Calculate effect sizes ---------------------------------------------
           if(input$es == TRUE) {
-            d <- cohens_d(col ~ grouping, data=data(), ci=confint)
-            output$esResults <- renderPrint({cohensD(col ~ grouping)})
+            d <- cohens_d(var ~ grouping, data=data(), ci=confint)
+            output$esResults <- renderPrint({d})
           } else {
             d <- "Not Calculated"
           }
@@ -181,7 +184,7 @@ indSamplesTServer <- function(id, data) {
         
           # Make parameters to pass to rMarkdown doc
           params <- list(descr = descriptives, results1 = results1_df, 
-                         results2 = results2_df, l = levenes)
+                         results2 = results2_df, d=d, l = levenes)
           
           # Generate pdf
           output$report <- generate_report("ind_t_test_report", params)
