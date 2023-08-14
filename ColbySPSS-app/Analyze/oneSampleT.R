@@ -150,7 +150,7 @@ oneSampleTServer <- function(id, data) {
         output$results <- renderPrint({results_df})
         
         # Generate the downloadable pdf report ---------------------------------
-        params <- list(descr = descriptives, results = results_df)
+        params <- list(descr = descriptives, results = results_df, d = d)
         
         output$report <- generate_report("t_test_report", params)
       }
