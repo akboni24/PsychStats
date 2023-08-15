@@ -379,7 +379,7 @@ ttestOptionsModal <- function(input, output, session) {
 }
 
 # Statistic Calculations for T Tests -------------------------------------------
-ttestStats <- function(var1, var2 = NULL) {
+ttestStats <- function(var1, var_names, var2 = NULL) {
   #' Calculates one sample or paired samples statistics for t tests
   #' 
   #' Parameters:
@@ -401,13 +401,13 @@ ttestStats <- function(var1, var2 = NULL) {
   stddev <- sd(var1)
   stderror <- function(x) sd(x)/sqrt(length(x))
   se <- stderror(var1)
-  df[1, ] <- list("1", N, mean, stddev, se)
+  df[1, ] <- list(var_names[1], N, mean, stddev, se)
   if (!is.null(var2)) {
     N2 <- length(var2)
     mean2 <- mean(var2)
     stddev2 <- sd(var2)
     se2 <- stderror(var2)
-    df[2, ] <- list("2", N2, mean2, stddev2, se2)
+    df[2, ] <- list(var_names[2], N2, mean2, stddev2, se2)
   }
   return(df)
 }
@@ -435,8 +435,8 @@ indttestStats <- function(var1, var2) {
   stddev <- by(var1, var2, sd)
   stderror <- function(x) sd(x)/sqrt(length(x))
   se <- by(var1, var2, stderror)
-  df[1, ] <- list("1", N[1], mean[1], stddev[1], se[1])
-  df[2, ] <- list("2", N[2], mean[2], stddev[2], se[2])
+  df[1, ] <- list(levels(var2)[1], N[1], mean[1], stddev[1], se[1])
+  df[2, ] <- list(levels(var2)[2], N[2], mean[2], stddev[2], se[2])
 
   return(df)
 }

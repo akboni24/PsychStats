@@ -44,7 +44,7 @@ pairedSamplesTUI <- function(id) {
         h5("Paired-Samples Statistics"),
         tableOutput(ns("descr")),
         h5("Paired Samples Test"),
-        tableOutput(ns("results")),
+        verbatimTextOutput(ns("results")),
         h5("Effect Sizes"),
         verbatimTextOutput(ns("esResults")),
         downloadButton(ns("report"), label = "Generate PDF")
@@ -101,8 +101,13 @@ pairedSamplesTServer <- function(id, data) {
     # Wait for the user to hit submit
     observeEvent(input$ok, {
       
+      # Clear all previous outputs ---------------------------------------------
+      output$descr <- renderTable({c()})
+      output$results <- renderPrint({c()})
+      output$esResults <- renderPrint({c()})
+      
       # Grab the confidence interval -------------------------------------------
-      if(is.null(input$confint)) {
+      if (is.null(input$confint)) {
         confint = 0.95
       } else {
         confint = input$confint
@@ -124,7 +129,8 @@ pairedSamplesTServer <- function(id, data) {
       
         
         # Make descriptives table ----------------------------------------------
-        descriptives <- ttestStats(col1, col2)
+        var_list <- c(c(input$rank_list_2), c(input$rank_list_3))
+        descriptives <- ttestStats(col1, var_list, col2)
         output$descr <- renderTable({
           descriptives
         })
@@ -139,21 +145,20 @@ pairedSamplesTServer <- function(id, data) {
         
         # Preparing the data (Converting to long format) -----------------------
         var_list <- c(input$rank_list_2, input$rank_list_3)
-        
+
         data_prepared <- data() %>%
           gather(key="within_var", value="dependent_var", var_list) %>%
           convert_as_factor(within_var)
-      
-        
+
+        x <- data_prepared %>% pull(within_var)
+        y <- data_prepared %>% pull(dependent_var)
         # Conduct the paired samples t test ------------------------------------
-        results_df <- nice_t_test(data=data_prepared, response="dependent_var",
-                                  group="within_var", paired=TRUE,
-                                  conf.level = confint)
+        results_df <- t.test(y ~ x, paired=TRUE, conf.level = confint)
         
-        output$results <- renderTable({results_df})
+        output$results <- renderPrint({results_df})
         
         # Generate the downloadable pdf report ---------------------------------
-        params <- list(descr = descriptives, results = results_df)
+        params <- list(descr = descriptives, results = results_df, d = d)
         
         output$report <- generate_report("paired_samples_report", params)
         

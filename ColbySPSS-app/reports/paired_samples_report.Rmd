@@ -4,6 +4,7 @@ output: pdf_document
 params:
   descr: NA
   results: NA
+  d: NA
 ---
 
 ```{r setup, include=FALSE}
@@ -28,5 +29,13 @@ kable(params$descr)
 ### Paired Samples Test
 
 ```{r}
-kable(params$results)
+df1 <- map_df(list(params$results), tidy)
+df1 <- df1[c("estimate", "statistic", "p.value", "conf.low", "conf.high")]
+colnames(df1) <- c("Estimate", "t", "p value", "Conf.Int.Low", "Conf.Int.High")
+kable(df1)
+```
+
+### Effect Sizes
+```{r}
+kable(params$d)
 ```

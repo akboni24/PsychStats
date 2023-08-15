@@ -122,7 +122,7 @@ oneSampleTServer <- function(id, data) {
       } else {
         
         # Calculate and display descriptives -----------------------------------
-        descriptives <- ttestStats(col)
+        descriptives <- ttestStats(col, c(input$rank_list_2))
         output$descr <- renderTable({
           descriptives
         })

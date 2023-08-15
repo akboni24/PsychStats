@@ -139,7 +139,7 @@ indSamplesTServer <- function(id, data) {
         # factor/grouping variable ---------------------------------------------
         var <- data() %>% pull(input$rank_list_2)
         grouping <- data() %>% pull(input$rank_list_3) %>% as.factor()
-      
+
         
         # Warning if there are more than two groups ----------------------------
         if (nlevels(grouping) > 2) {
