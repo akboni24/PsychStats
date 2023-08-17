@@ -1,0 +1,37 @@
+---
+title: "Descriptives"
+output: pdf_document
+params:
+  descr: NA
+  centen: NA
+  disp: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
+library(shiny)
+library(dplyr)
+library(knitr)
+library(rempsyc)
+library(flextable)
+library(tidystats)
+set_flextable_defaults(fonts_ignore = TRUE)
+```
+
+## Descriptives
+
+```{r}
+params$descr
+```
+
+### Central Tendency
+
+```{r}
+kable(params$centen)
+```
+
+### Dispersion
+```{r}
+kable(params$disp)
+```

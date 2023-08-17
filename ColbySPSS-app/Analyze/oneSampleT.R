@@ -40,7 +40,6 @@ oneSampleTUI <- function(id) {
     fluidRow(
       column(
         width = 10,
-        # Should hide the OK button until the user has moved at least one variable....
         disabled(actionButton(ns("ok"), "OK")),
         br()
       )

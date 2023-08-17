@@ -40,8 +40,8 @@ descriptivesUI <- function(id) {
         h5("Central Tendency"),
         verbatimTextOutput(ns("centResults")),
         h5("Dispersion"),
-        verbatimTextOutput(ns("dispResults"))
-        
+        verbatimTextOutput(ns("dispResults")),
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
     
@@ -103,7 +103,7 @@ descriptivesServer <- function(id, data) {
         output$results <- renderPrint({descriptives})
         
         # Central Tendency -----------------------------------------------------
-        centen_results <- NULL
+        centen_results <- c()
         if (!is.null(input$desc)) {
           centen_results <- centraltendency(cols, input$desc)
         }
@@ -113,7 +113,7 @@ descriptivesServer <- function(id, data) {
         }
         
         # Dispersion -----------------------------------------------------------
-        disp_results <- NULL
+        disp_results <- c()
         if (!is.null(input$disp)) {
           disp_results <- dispersion(cols, input$disp)
         }
@@ -121,6 +121,12 @@ descriptivesServer <- function(id, data) {
         if (!is.null(disp_results)) {
           output$dispResults <- renderPrint({disp_results})
         }
+        
+        # Generate the downloadable pdf report ---------------------------------
+        params <- list(descr = descriptives, centen = centen_results, 
+                       disp = disp_results)
+        
+        output$report <- generate_report("descriptives_report", params)
       
       }
       
