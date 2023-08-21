@@ -14,7 +14,12 @@ freqUI <- function(id) {
     ),
     useShinyjs(),
     titlePanel("Frequencies"),
-  
+    fluidRow(
+      column (
+        width = 12,
+        h5("Note: This page is best used for summarizing categorical or discrete variables.")
+      )
+    ),
     # Creates two drag and drop buckets
     fluidRow(
       column (
@@ -48,7 +53,8 @@ freqUI <- function(id) {
         h3("Frequency Table"),
         verbatimTextOutput(ns("frequencies")),
         h3("Charts"),
-        plotOutput(ns("chart_results"))
+        plotOutput(ns("chart_results")),
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
     
@@ -123,13 +129,23 @@ freqServer <- function(id, data) {
       
         if (!is.null(input$type)) {
           
-          chart <- freqCharts(data(), var, input$type, input$values)
+          chart <- freqCharts(data(), var, c(input$rank_list_2), input$type, input$values, input$normal)
           
           output$chart_results <- renderPlot({chart})
           
         }
         
+    } else {
+      chart <- c()
     }
+    
+    # Generate pdf report ------------------------------------------------------
+    
+    # Make parameters to pass to rMarkdown doc
+    params <- list(freq = results, chart = chart)
+    
+    # Generate pdf
+    output$report <- generate_report("frequencies_report", params)
 
   })
   

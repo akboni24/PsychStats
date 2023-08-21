@@ -185,21 +185,22 @@ freqChartsModal <- function(input, output, session) {
 #   }
 
 # Frequency Charts Generator Function ------------------------------------------
-freqCharts <- function(data, var, type, values) {
+freqCharts <- function(data, var, var_name, type, values, normal) {
   
   if (type == "Bar Chart") {
     
     if (values == "Percentages") {
-      chart <- ggplot(data, aes(var)) +
+      chart <- ggplot(data, aes(x=var)) +
                   geom_bar(aes(y=(after_stat(count))/sum(after_stat(count)))) +
                   scale_y_continuous(labels = scales::percent) +
                   ylab("Percentages") 
     } else {
-      chart <- ggplot(data, aes(var)) +
+      chart <- ggplot(data, aes(x=var)) +
                 geom_bar() +
                 ylab("Frequency")
     }
-    
+  
+  
   } else if (type == "Pie Chart") {
     
     if (values == "Percentages") {
@@ -217,7 +218,7 @@ freqCharts <- function(data, var, type, values) {
   }
   
   chart <- chart +
-            xlab(names(var)) +
+            xlab(var_name) +
             guides(color = guide_legend(override.aes=list(shape = 20))) +
             theme(axis.line = element_line(colour = "black"),
                   plot.margin=grid::unit(c(5,85,5,5), "mm"),
