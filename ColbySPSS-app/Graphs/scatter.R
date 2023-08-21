@@ -35,7 +35,8 @@ scatterUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        ggvisOutput(ns("plotResults"))
+        ggvisOutput(ns("plotResults")),
+        downloadButton(ns("report"), label = "Generate PDF")
       )
     )
   )
@@ -96,41 +97,47 @@ scatterServer <- function(id, data) {
       x <- data() %>% pull(input$rank_list_3)
       
       # Check titles -----------------------------------------------------------
-      if(!is.null(input$main)) {
-        main <- input$main
+      if (is.null(input$main)) {
+        main <- "Scatterplot"
       } else {
-        main = "Scatterplot"
+        main <- input$main
       }
       
-      if(!is.null(input$sub)) {
-        sub <- input$sub
+      if (is.null(input$sub)) {
+        sub <- NULL
+        include1 <- FALSE
       } else {
-        sub = ""
+        sub <- input$sub
+        include1 <- TRUE
       }
 
-      
-      if(!is.null(input$foot)) {
-        footnote <- input$foot
+      if (is.null(input$foot)) {
+        footnote <- NULL
+        include2 <- FALSE 
       } else {
-        footnote = ""
+        footnote <- input$foot
+        include2 <- TRUE
       }
+     
       
       
       # Render the plot --------------------------------------------------------
-       plot <-  reactive({
-                    data() %>% 
-                      ggvis(~x, ~y) %>% 
-                      layer_points() %>%
-                      add_axis("x", title = input$rank_list_3) %>%
-                      add_axis("y", title = input$rank_list_2) %>%
-                      add_title(title=main) %>%
-                      add_title(title=sub, subtitle=TRUE) %>%
-                      add_title(title=footnote, footnote=TRUE)
+       plot <- data() %>% 
+                    ggvis(~x, ~y) %>% 
+                    layer_points() %>%
+                    add_axis("x", title = input$rank_list_3) %>%
+                    add_axis("y", title = input$rank_list_2) %>%
+                    add_title(title=main) %>%
+                    add_title(title=sub, subtitle=include1) %>%
+                    add_title(title=footnote, footnote=include2)
                       
-                  })
 
       plot %>% bind_shiny("scat-plotResults")
     
+      # Generate the downloadable pdf report -----------------------------------
+      params <- list(plot = plot)
+      
+      output$report <- generate_report("scatter_report", params)
   })
     
   })

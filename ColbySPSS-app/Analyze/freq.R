@@ -104,6 +104,10 @@ freqServer <- function(id, data) {
   # Wait for the user to hit submit --------------------------------------------
   observeEvent(input$ok, {
     
+    # Clear all previous outputs -------------------------------------------
+    output$frequencies <- renderPrint({c()})
+    output$chart_results <- renderPlot({c()})
+    
     # Extract variables --------------------------------------------------------
     var <- data() %>% pull(input$rank_list_2) %>% as.factor()
     
@@ -133,6 +137,8 @@ freqServer <- function(id, data) {
           
           output$chart_results <- renderPlot({chart})
           
+        } else {
+          chart <- c()
         }
         
     } else {

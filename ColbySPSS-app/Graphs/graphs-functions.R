@@ -49,9 +49,7 @@ add_title <- function(vis, ..., properties=NULL, title = "Plot Title", footnote=
                                   labels = list(fontSize = 0)
                                 ))
   }
-  
-  
-  
+
   ggvis:::append_ggvis(vis, "axes", axis)
 }
 
