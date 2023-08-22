@@ -7,19 +7,18 @@ library(ggvis)
 library(readxl)
 library(shinyjs)
 
-# here is where I am importing all of my other files - there's a better way to do
-# this, I just haven't gotten it to work yet
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/freq.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/descriptives.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/oneSampleT.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/indSamplesT.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/pairedSamplesT.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/oneWayANOVA.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/univariate.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/repeatedMeasures.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/regression.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/correlation.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Graphs/scatter.R")
+# Here, I am importing all of my modules, which are stored within separate files
+source("Analyze/freq.R", local=TRUE)
+source("Analyze/descriptives.R", local=TRUE)
+source("Analyze/oneSampleT.R", local=TRUE)
+source("Analyze/indSamplesT.R", local=TRUE)
+source("Analyze/pairedSamplesT.R", local=TRUE)
+source("Analyze/oneWayANOVA.R", local=TRUE)
+source("Analyze/univariate.R", local=TRUE)
+source("Analyze/repeatedMeasures.R", local=TRUE)
+source("Analyze/regression.R", local=TRUE)
+source("Analyze/correlation.R", local=TRUE)
+source("Graphs/scatter.R", local=TRUE)
 
 # Main user interface - Navbar at the top, data table and csv import on the main page
 ui <- navbarPage(

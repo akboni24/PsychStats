@@ -5,8 +5,8 @@ library(DescTools)
 library(ppcor)
 library("Hmisc")
 library(shinyjs)
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/regression-functions.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
+source("Analyze/regression-functions.R", local = TRUE)
+source("Analyze/analyze-functions.R", local=TRUE)
 # User Interface ---------------------------------------------------------------
 correlationUI <- function(id) {
   

@@ -1,7 +1,7 @@
 library(shiny)
 library(sortable)
 library(lsr)
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
+source("Analyze/analyze-functions.R", local=TRUE)
 # User Interface ---------------------------------------------------------------
 pairedSamplesTUI <- function(id) {
   

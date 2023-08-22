@@ -2,8 +2,8 @@ library(shiny)
 library(sortable)
 library(knitr)
 library(tidyverse)
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/analyze-functions.R")
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/reports/reports-functions.R")
+source("Analyze/analyze-functions.R", local=TRUE)
+source("reports/reports-functions.R", local=TRUE)
 # User Interface ---------------------------------------------------------------
 oneSampleTUI <- function(id) {
   

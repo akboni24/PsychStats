@@ -4,7 +4,7 @@ library(effectsize)
 library(DescTools)
 library(tidyr)
 library(lsmeans)
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Analyze/anova-functions.R")
+source("Analyze/anova-functions.R", local=TRUE)
 # User Interface ---------------------------------------------------------------
 univariateUI <- function(id) {
   

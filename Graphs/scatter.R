@@ -2,7 +2,7 @@ library(shiny)
 library(sortable)
 library("ggvis")
 library(dplyr)
-source("~/Documents/git_repos/PsychStats/ColbySPSS-app/Graphs/graphs-functions.R")
+source("Graphs/graphs-functions.R", local=TRUE)
 # User Interface ---------------------------------------------------------------
 scatterUI <- function(id) {
   
