@@ -17,7 +17,8 @@ scatterUI <- function(id) {
     fluidRow(
       column (
         width = 10,
-        uiOutput(ns("sortable"))
+        uiOutput(ns("sortable")),
+        checkboxInput(ns("reg_line"), label="Add regression line?", value=FALSE)
       ),
       column(
         # Buttons
@@ -35,7 +36,7 @@ scatterUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        ggvisOutput(ns("plotResults")),
+        plotOutput(ns("plotResults")),
         downloadButton(ns("report"), label = "Generate PDF")
       )
     )
@@ -102,37 +103,26 @@ scatterServer <- function(id, data) {
       } else {
         main <- input$main
       }
-      
-      if (is.null(input$sub)) {
-        sub <- NULL
-        include1 <- FALSE
-      } else {
-        sub <- input$sub
-        include1 <- TRUE
-      }
 
-      if (is.null(input$foot)) {
-        footnote <- NULL
-        include2 <- FALSE 
-      } else {
-        footnote <- input$foot
-        include2 <- TRUE
-      }
-     
-      
       
       # Render the plot --------------------------------------------------------
-       plot <- data() %>% 
-                    ggvis(~x, ~y) %>% 
-                    layer_points() %>%
-                    add_axis("x", title = input$rank_list_3) %>%
-                    add_axis("y", title = input$rank_list_2) %>%
-                    add_title(title=main) %>%
-                    add_title(title=sub, subtitle=include1) %>%
-                    add_title(title=footnote, footnote=include2)
-                      
+       plot <- ggplot(data(), aes(x=x, y=y)) +
+                    geom_point() +
+                    labs(title=main, x=input$rank_list_3, y=input$rank_list_2)
+      
+      if (!is.null(input$sub)) {
+        plot <- plot + labs(subtitle=input$sub)
+      }
+      
+      if (!is.null(input$foot)) {
+        plot <- plot + labs(caption=input$foot)
+      }
+      
+      if (input$reg_line == TRUE) {
+        plot <- plot + geom_smooth(method=lm)
+      }
 
-      plot %>% bind_shiny("scat-plotResults")
+      output$plotResults <- renderPlot(plot)
     
       # Generate the downloadable pdf report -----------------------------------
       params <- list(plot = plot)
