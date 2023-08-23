@@ -33,11 +33,8 @@ anovaOptionsModal <- function(input, output, session) {
     title = "ANOVA: Options",
     checkboxGroupInput(ns("stat"), label = "Statistics", c("Descriptives", 
                                                            "Homogeneity of variance test", "Welch test")),
-    radioButtons(ns("mv"), label = "Missing Values", 
-                 choices = list("Exclude cases analysis by analysis" = 1, 
-                                "Exclude cases listwise" = 2), selected = 1),
     numericInput(ns("confint"), label = "Confidence Intervals (Level%)", 
-                 value = "0.95"),
+                 value = "0.95", min=0.01, max=0.99, step=0.01),
     footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), 
                                                          "Continue"))
   )

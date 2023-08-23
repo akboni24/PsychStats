@@ -55,6 +55,9 @@ oneWayAnovaUI <- function(id) {
         verbatimTextOutput(ns("results")),
         h3("Effect Sizes"),
         tableOutput(ns("esResults")),
+        h3("Estimated Marginal Means"),
+        verbatimTextOutput(ns("emResults_overall")),
+        verbatimTextOutput(ns("emResults1")),
         h3("Post Hoc Tests"),
         verbatimTextOutput(ns("phTests")),
         downloadButton(ns("report"), label = "Generate PDF")
@@ -120,6 +123,16 @@ oneWayAnovaServer <- function(id, data) {
     # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
+      # Clear all previous outputs ---------------------------------------------
+      output$warning <- renderPrint({c()})
+      output$results <- renderPrint({c()})
+      output$descr <- renderTable({c()})
+      output$levene <- renderPrint({c()})
+      output$welch<- renderPrint({c()})
+      output$esResults <- renderTable({c()})
+      output$phTests <- renderPrint({c()})
+      
+      
       # Check that the user selected the right kinds of variables --------------
       numeric <- check_condition(input$rank_list_2, data(), is.numeric)
       factor <- check_condition(input$rank_list_3, data(), is.numeric)
@@ -132,8 +145,8 @@ oneWayAnovaServer <- function(id, data) {
       # Stop calculations and print error message if other variable is not numeric
       if (numeric == FALSE) {
         output$errors <- renderText({errorText("categorical", "numeric")})
+        
       } else {
-      
       
         # Calculate the ANOVA and display the results in a table -----------------
         col1 <- data() %>% pull(input$rank_list_2)
@@ -146,7 +159,6 @@ oneWayAnovaServer <- function(id, data) {
         })
         
         # Calculate chosen statistics ------------------------------------------
-        
         if (!is.null(input$stat)) {
           
           if ("Descriptives" %in% input$stat) {
@@ -156,6 +168,7 @@ oneWayAnovaServer <- function(id, data) {
             output$descr <- renderTable({
               descriptives
             })
+            
           } else {
             descriptives <- c()
           }
@@ -166,6 +179,7 @@ oneWayAnovaServer <- function(id, data) {
             output$levene <- renderPrint({
               levene
             })
+            
           } else {
             levene <- c()
           }
@@ -176,6 +190,7 @@ oneWayAnovaServer <- function(id, data) {
             output$welch <- renderPrint({
               welch
             })
+            
           } else {
             welch <- c()
           }
@@ -196,22 +211,45 @@ oneWayAnovaServer <- function(id, data) {
         }
         
         # Calculate post hoc tests ---------------------------------------------
-        if(is.null(input$confint)) {
+        if (is.null(input$confint)) {
           confint = 0.95
         } else {
           confint = input$confint
         }
         
-        posthoc <- postHocCalc(input$eva, col1, col2, confint)
-        if (!is.null(input$eva)) {
+        if (input$posthoc) {
+          
+          if (is.null(input$eva)) {
+            test <- "LSD"
+          } else {
+            test <- input$eva
+          }
+          
+          posthoc <- postHocCalc(test, col1, col2, confint)
+          
           output$phTests <- renderPrint({
             posthoc
           })
+          
+        } else {
+          posthoc <- c()
         }
         
-        # Generate the downloadable pdf report ---------------------------------
-        em_over <- emmeans_descr(data(), input$rank_list_2, levels=FALSE)
+        # Calculate Estimated Marginal Means -----------------------------------
+        em_over <- emmeans_descr(data(), input$rank_list_2)
         emmeans <- emmeans(lm(col1 ~ col2), specs= ~ col2)
+        
+        output$emResults_overall <- renderPrint({
+          print("Grand Mean");
+          em_over
+        })
+        
+        output$emResults1 <- renderPrint({
+          print(c(input$rank_list_3));
+          print(summary(emmeans, level=confint));
+        })
+        
+        # Generate the downloadable pdf report ---------------------------------
         params <- list(descr = descriptives, levene=levene, welch=welch,
                        anova=anovaResults, n2=esResults, em_o=em_over, em=emmeans,
                        posthoc=posthoc)

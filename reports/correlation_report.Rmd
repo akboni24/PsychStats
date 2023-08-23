@@ -10,6 +10,7 @@ params:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=FALSE)
 knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
+knitr::opts_chunk$set(comment = NA)
 library(shiny)
 library(dplyr)
 library(knitr)
