@@ -217,15 +217,9 @@ oneWayAnovaServer <- function(id, data) {
           confint = input$confint
         }
         
-        if (input$posthoc) {
-          
-          if (is.null(input$eva)) {
-            test <- "LSD"
-          } else {
-            test <- input$eva
-          }
-          
-          posthoc <- postHocCalc(test, col1, col2, confint)
+        if (!is.null(input$eva)) {
+      
+          posthoc <- postHocCalc(input$eva, col1, col2, confint)
           
           output$phTests <- renderPrint({
             posthoc

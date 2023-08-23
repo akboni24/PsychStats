@@ -17,7 +17,7 @@ anovaPostHocModal <- function(input, output, session) {
   modalDialog (
     title = "ANOVA: Post Hoc Multiple Comparisons",
     radioButtons(ns("eva"), label = "Equal Variances Assumed", 
-                 c("LSD", "Bonferroni", "Tukey's HSD")),
+                 c("None", "LSD", "Bonferroni", "Tukey's HSD")),
     footer = tagList(modalButton("Cancel"), actionButton(ns("continue"), 
                                                          "Continue"))
   )
@@ -75,7 +75,6 @@ anovaDescriptives <- function(data, dep_name, vars_name) {
   
   dep <- data %>% pull(dep_name)
   vars <- as.factor(data %>% pull(vars_name))
-  #vars <- lapply(vars, as.factor)
   
   Factor.Levels <- levels(vars)
   Factor.Levels <- append(Factor.Levels, c("Total"))

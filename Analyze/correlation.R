@@ -32,7 +32,7 @@ correlationUI <- function(id) {
     fluidRow(
       column(
         width = 10,
-        checkboxGroupInput(ns("coef"), label="Correlation Coefficients: ", 
+        radioButtons(ns("coef"), label="Correlation Coefficients: ", 
                            c("Pearson", "Spearman"),
                            selected="Pearson"),
         # Should hide the OK button until the user has moved at least one variable....
@@ -42,7 +42,7 @@ correlationUI <- function(id) {
     fluidRow (
       column (
         width = 10,
-        h3("Descriptives"),
+        h3("Means and Standard Deviations"),
         verbatimTextOutput(ns("descr")),
         h3("Correlations"),
         verbatimTextOutput(ns("corr")),
@@ -100,6 +100,11 @@ correlationServer <- function(id, data) {
     # Wait for the user to hit submit ------------------------------------------
     observeEvent(input$ok, {
       
+      # Clear previous outputs -------------------------------------------------
+      output$descr <- renderPrint({c()})
+      output$corr <- renderPrint({c()})
+      output$cov <- renderPrint({c()})
+      
       # Calculate the correlation matrix ---------------------------------------
       x <- extractCols(input$rank_list_2, data())
       d <- data.frame(x)
@@ -111,7 +116,8 @@ correlationServer <- function(id, data) {
       }
       
       output$corr <- renderPrint({
-        results
+        print("Correlation Coefficients");
+        print(results)
       })
       
       if ("Means and standard deviations" %in% input$stats) {
