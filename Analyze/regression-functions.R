@@ -67,5 +67,5 @@ means_and_sd <- function(x) {
   #' of a given variable
   #' Arguments: x (numeric variable)
   #' Used for calculations of stats modal for correlations page
-  c(mean = mean(x), sd = sd(x))
+  return(c(mean=mean(x), sd=sd(x)))
 }

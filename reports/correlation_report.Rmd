@@ -21,26 +21,25 @@ set_flextable_defaults(fonts_ignore = TRUE)
 
 ## Correlation
 
-### Descriptive Statistics
+### Means and Standard Deviations
 
 ```{r}
 kable(params$descr)
 ```
 
 ### Correlations
-
+#### Correlation Coefficient
 ```{r}
 kable(params$results$r)
 ```
 
+#### P Values
 ```{r}
-kable(params$results$p)
+kable(params$results$P)
 ```
 
 ### Covariances
 
 ```{r}
-if (params$cov != "Not Calculated") {
-  kable(params$cov)
-}
+kable(params$cov)
 ```

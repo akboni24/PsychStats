@@ -123,7 +123,7 @@ correlationServer <- function(id, data) {
       if ("Means and standard deviations" %in% input$stats) {
         descr <- sapply(d, means_and_sd)
         output$descr <- renderPrint({
-          descr
+          t(descr)
         })
       } else {
         descr <- "Not Calculated"
