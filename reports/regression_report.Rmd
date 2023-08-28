@@ -49,13 +49,13 @@ params$pcor
 params$ci
 ```
 
-### Covariances
+### Covariance Matrix
 
 ```{r}
 params$cov
 ```
 
-### Collinearity Diagnostics
+### Collinearity Diagnostics (VIF)
 
 ```{r}
 params$coll

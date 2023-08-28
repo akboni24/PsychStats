@@ -33,8 +33,6 @@ regressionUI <- function(id) {
       column(
         width = 10,
         selectInput(ns("method"), label="Method: ", choice=c("Enter", "Stepwise")),
-        # find more options
-        # Should hide the OK button until the user has moved at least one variable....
         actionButton(ns("ok"), "OK")
       )
     ),
@@ -141,7 +139,8 @@ regressionServer <- function(id, data) {
           intercept_only <- lm(y ~ 1, data=data())
           all <- lm(d)
           model <- step(intercept_only, direction='forward', scope=formula(all))
-          toPrint <- list(model$anova, model$coefficients)
+          toPrint <- list(model$anova, summary(model))
+          #toPrint <- summary(model)
         } else {
           model <- lm(d)
           toPrint <- summary(model)
@@ -164,7 +163,7 @@ regressionServer <- function(id, data) {
         
         # Calculate and display partial correlations ---------------------------
         if ("Part and partial correlations" %in% input$other) {
-          pcor <- pcor(d)
+          pcor <- pcor(na.omit(d))
           output$corr <- renderPrint ({
             pcor
           })
@@ -172,7 +171,7 @@ regressionServer <- function(id, data) {
           pcor <- "Not Calculated"
         }
         
-        # Calculate and display chose statistics -------------------------------
+        # Calculate and display chosen statistics -------------------------------
         if ("Confidence Intervals (95%)" %in% input$regcoef) {
           confints <- confint(model)
           output$ci <- renderPrint({
@@ -193,7 +192,13 @@ regressionServer <- function(id, data) {
         }
         
         if ("Collinearity diagnostics" %in% input$other) {
-          colls <- vif(model)
+          
+          if (length(model$coefficients) < 3) {
+            colls <- "Model contains fewer than 2 terms. Cannot calculate VIF."
+          } else {
+            colls <- vif(model)
+          }
+          
           output$coll <- renderPrint({
             colls
           })

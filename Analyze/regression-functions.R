@@ -28,14 +28,6 @@ lrStatsModal <- function(input, output, session) {
                   "Part and partial correlations", "Collinearity diagnostics")),
     )
     ),
-    fluidRow(
-      column(
-        width = 12,
-        # should i get rid of this?
-        checkboxGroupInput(ns("resid"), label = "Residuals", 
-                           c("Durbin-Watson", "Casewise Diagnostics"))
-      )
-    ),
     footer = tagList(modalButton("Cancel"), actionButton(ns("submit"), "Submit"))
   )
   
