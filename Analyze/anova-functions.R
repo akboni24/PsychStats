@@ -163,18 +163,53 @@ uniPlotsModal <- function(input, output, session, vars) {
 }
 
 # Plotting function for Univariate Page ----------------------------------------
-uniMakePlot <- function(df, x, group, dep, type = "Line Chart", errorBars) {
+uniMakePlot <- function(df, x, group, dep, x_name, dep_name, errorBars, type = "Line Chart") {
   #' Creates a two-way interaction plot
   #' Arguments: df (dataframe), x (variable on x-axis), group 
   #' (variable for separate lines), dep (dependent variable),
-  #' type (type of plot), and eb (Error bars: either "None", "Confint", or "SE)
-  # ------------------------------------------------------------------------------
+  #' type (type of plot), and eb (Error bars: either "None", "Confint", or "SE")
+  # ----------------------------------------------------------------------------
+  df$lower <- ci_bound_lower(dep)
+  df$upper <- ci_bound_upper(dep)
+  df$se <- stderror(dep)
+ 
   if ("Bar Chart" %in% type) {
-    return(ggbarplot(df, x, dep, fill = group, color = group, palette = "Paired", 
-                     label = TRUE, position = position_dodge(0.9), add = errorBars))
+    plot <- ggplot(df, aes(x=x, y=dep)) +
+              geom_col(aes(fill=group, colour=group), position=position_dodge(0.8))
+            
+    # return(ggbarplot(df, x, dep, fill = group, color = group, palette = "Paired", 
+    #                  label = TRUE, position = position_dodge(0.9), add = errorBars))
   } else {
-    return(ggline(df, x, y = dep, color = group, add = errorBars))
+    plot <- ggplot(df, aes(x=x, y=dep)) +
+                geom_line(aes(group=group, colour=group)) +
+                geom_point(aes(mean(dep)))
   }
+  
+  if ("mean_ci" %in% errorBars) {
+    plot <- plot + geom_errorbar(aes(ymin=lower, ymax=upper), width=0.2)
+  } else if ("mean_se" %in% errorBars) {
+    plot <- plot + geom_errorbar(aes(ymin=dep-se, ymax=dep+se), width=0.2)
+  }
+  
+  plot <- plot +
+            xlab(x_name) +
+            ylab(dep_name) +
+            guides(color = guide_legend(override.aes=list(shape = 20))) +
+            theme(axis.line = element_line(colour = "black"),
+            plot.margin=grid::unit(c(5,85,5,5), "mm"),
+            axis.line.x.bottom=element_line(linewidth=0.5),
+            axis.line.y.left=element_line(linewidth=0.5),
+            axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(),
+            panel.background = element_blank(),
+            plot.title = element_text(hjust = 0.5,size = 30, face = "bold"),
+            axis.text.x = element_text(color="black"),
+            axis.text.y = element_text(color="black"),
+            axis.ticks = element_line(color = "black"))
+  
+  return(plot)
 }
 
 # Post Hoc Multiple Comparisons Modal for Univariate Page ----------------------
@@ -269,24 +304,6 @@ uniEMCalc <- function(vars, ciAdj, model, col2, col3) {
     return(emmeans(model, specs = pairwise ~ col2:col3))
   } 
 }
-
-# Helper Functions for Test for Simple Effects ---------------------------------
-# anova_se <- function(anova_data, factor, dep) {
-#   dependent_var <- anova_data %>% pull(dep)
-#   other_factor <- as.factor(anova_data %>% pull(factor))
-#   y <- lm(dependent_var ~ sefactor, data=anova_data)
-#   summary(aov(y))
-# }
-# 
-# test_simple_effects <- function(anova_data, x, y, sefactor) {
-#   # Calculates a test of simple effects for Two Way ANOVA
-#   # Arguments: anova_data (df), x (factor for anova), dep (dependent variable name),
-#   # sefactor (factor to split data on)
-#   # ------------------------------------------------------------------------------
-#   se_factor <- as.factor(anova_data %>% pull(sefactor))
-#   dfs <- split(anova_data, sefactor)
-#   se_results <- lapply(dfs, anova_se, factor=x, dep=y)
-# }
 
 
 # Functions for One Way Within Subjects ANOVA ----------------------------------

@@ -179,28 +179,40 @@ univariateServer <- function(id, data) {
         dependent_var <- data() %>% pull(input$rank_list_2)
         between1 <- as.factor(data() %>% pull(input$rank_list_3[1]))
         between2 <- as.factor(data() %>% pull(input$rank_list_3[2]))
-        anova_lm <- lm(dependent_var ~ between1*between2)
-        anovaResults <- anova(anova_lm)
+        dep_name <- c(input$rank_list_2)
+        anova_lm <- anova_lm <- aov_ez(colnames(data())[1], dep_name,
+                                       between = c(input$rank_list_3),
+                                       data=data(),
+                                       return=c("aov"))
+        anovaResults <- aov_ez(colnames(data())[1], dep_name,
+                               between = c(input$rank_list_3[1], input$rank_list_3[2]),
+                               data=data(),
+                               es="pes")
         
         output$results <- renderPrint({
           anovaResults
         })
         
         # Make plots -------------------------------------------------------------
-        if(!is.null(input$errorBars)) {
-          if(is.null(input$ebOptions)) {
-            errorBars <- "mean_ci"
+        if (input$plots == TRUE) {
+          if (input$errorBars == TRUE) {
+            if (is.null(input$ebOptions)) {
+              errorBars <- "mean_ci"
+            } else {
+              errorBars <- "mean_se"
+            }
           } else {
-            errorBars <- "mean_se"
+            errorBars <- "none"
           }
-        } else {
-          errorBars <- "none"
-        }
-        if (!is.null(input$plotXAxis)) {
-          output$plotResults <- renderPlot({
-            uniMakePlot(data(), input$plotXAxis, input$plotSepLines, input$rank_list_2, 
-                        input$type, errorBars)
-          })
+          
+          if (!is.null(input$plotXAxis)) {
+            output$plotResults <- renderPlot({
+              uniMakePlot(data(), as.factor(data() %>% pull(input$plotXAxis)), 
+                          as.factor(data() %>% pull(input$plotSepLines)), dependent_var,
+                          c(input$plotXAxis), dep_name, errorBars, input$type)
+            })
+          }
+      
         }
         
         # Calculate chosen statistics --------------------------------------------
@@ -209,15 +221,17 @@ univariateServer <- function(id, data) {
           if ("Descriptives" %in% input$stat) {
             descriptives <- two_way_anovaDescriptives(data(), input$rank_list_2, 
                                          input$rank_list_3[1], input$rank_list_3[2])
+            
             output$descr <- renderTable({
               descriptives
             })
+            
           } else {
             descriptives <- "Not Calulated"
           }
           
           if ("Homogeneity of variance test" %in% input$stat) {
-            levene <- leveneTest(anova_lm, center=mean)
+            levene <- leveneTest(lm(dependent_var ~ between1*between2), center=mean)
             output$levene <- renderPrint({
               levene
             })
@@ -282,7 +296,7 @@ univariateServer <- function(id, data) {
           posthoc <- "Not Calculated"
         }
         
-        # Calculate EM Means -----------------------------------------------------
+        # Calculate EM Means ---------------------------------------------------
         if (!is.null(input$EMVars)) {
           if (!is.null(input$ciadj)) {
             ciadj <- 'bonferroni'
@@ -291,7 +305,7 @@ univariateServer <- function(id, data) {
           }
           
           if ("OVERALL" %in% input$EMVars) {
-            em1 <- emmeans_descr(data(), input$rank_list_2, levels=FALSE)
+            em1 <- emmeans_descr(data(), input$rank_list_2)
             output$emResults_overall <- renderPrint({
               print("Grand Mean");
               em1
@@ -420,9 +434,14 @@ univariateServer <- function(id, data) {
              by_var <- input$rank_list_3[1]
            }
            
+           if (is.null(input$setestadj)) {
+             ciadj <- "bonferroni"
+           } else {
+             ciadj <- "none"
+           }
            
            se_results1 <- pairs(lsm, adjust=ciadj)
-           se_results2 <- summary(joint_tests(em_fit4, by=by_var))
+           se_results2 <- joint_tests(lsm, by=by_var)
            
            
            output$seResults <- renderPrint({
