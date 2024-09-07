@@ -5,7 +5,7 @@ library(sortable)
 library(ggpubr)
 library(emmeans)
 library(lsr)
-
+library(sciplot)
 # This file contains all of my helper functions and modals for the ANOVA pages
 
 # Post Hoc Modal for ANOVA -----------------------------------------------------
@@ -66,9 +66,17 @@ stderror <- function(x) sd(x)/sqrt(length(x))
 
 
 two_way_anovaDescriptives <- function(data, dep, var1, var2) {
-  factor <- as.factor(data %>% pull(var1))
-  dfs <- split(data, factor)
-  final_dfs <- lapply(dfs, FUN=anovaDescriptives, dep, var2)
+  # factor <- as.factor(data %>% pull(var1))
+  # dfs <- split(data, factor)
+  # final_dfs <- lapply(dfs, FUN=anovaDescriptives, dep, var2)
+  factor1 <- as.factor(data %>% pull(var1))
+  factor2 <- as.factor(data %>% pull(var2))
+  summary <- data %>% group_by(factor1, factor2) %>% 
+                    dplyr::summarise(N = length(dep),
+                                     Mean = mean(dep),
+                                     Std.Dev = std(dep),
+                                     Std.Error = stderror(dep))
+  return(summary)
 }
 
 anovaDescriptives <- function(data, dep_name, vars_name) {
@@ -163,38 +171,61 @@ uniPlotsModal <- function(input, output, session, vars) {
 }
 
 # Plotting function for Univariate Page ----------------------------------------
-uniMakePlot <- function(df, x, group, dep, x_name, dep_name, errorBars, type = "Line Chart") {
+uniMakePlot <- function(data, x, group, dep, x_name, dep_name, group_name, errorBars, type = "Line Chart") {
   #' Creates a two-way interaction plot
   #' Arguments: df (dataframe), x (variable on x-axis), group 
   #' (variable for separate lines), dep (dependent variable),
   #' type (type of plot), and eb (Error bars: either "None", "Confint", or "SE")
   # ----------------------------------------------------------------------------
-  df$lower <- ci_bound_lower(dep)
-  df$upper <- ci_bound_upper(dep)
-  df$se <- stderror(dep)
- 
+  # x_groups <- as.factor(data %>% pull(x))
+  # sep_lines <- as.factor(data %>% pull(group))
+  # dep <- data %>% pull(dep_name)
+  # summary <- data %>% group_by(c(x_groups), c(sep_lines)) %>% 
+  #                     dplyr::summarise(means = mean(dep),
+  #                                        sd = sd(dep),
+  #                                        se = sd(dep)/sqrt(length(dep)),
+  #                                        lower = ci_bound_lower(dep),
+  #                                        upper = ci_bound_upper(dep))
+  # print(summary)
   if ("Bar Chart" %in% type) {
-    plot <- ggplot(df, aes(x=x, y=dep)) +
-              geom_col(aes(fill=group, colour=group), position=position_dodge(0.8))
+    plot <- ggplot(data, aes(x=x, y=dep)) +
+              stat_summary(geom = "col", fun = "mean", size = 3, position = position_dodge(0.9),
+                           aes(fill=group, colour=group))
+    
+    if ("mean_ci" %in% errorBars) {
+      plot <- plot + stat_summary(fun.data = mean_sdl, geom = "errorbar", width=0.2,
+                                  aes(group=group), position = position_dodge(0.9))
+    } else if ("mean_se" %in% errorBars) {
+      plot <- plot + stat_summary(fun.data = mean_se, geom = "errorbar", width=0.2,
+                                  aes(group=group), position = position_dodge(0.9))
+    }
             
     # return(ggbarplot(df, x, dep, fill = group, color = group, palette = "Paired", 
     #                  label = TRUE, position = position_dodge(0.9), add = errorBars))
   } else {
-    plot <- ggplot(df, aes(x=x, y=dep)) +
-                geom_line(aes(group=group, colour=group)) +
-                geom_point(aes(mean(dep)))
+    plot <- ggplot(data, aes(x=x, y=dep)) +
+                  stat_summary(geom = "point", fun = "mean", size = 5,
+                               aes(group=group, colour=group))+
+                  stat_summary(geom = "line", fun = "mean", size = 1,
+                               aes(group=group, colour=group))
+    
+    if ("mean_ci" %in% errorBars) {
+      plot <- plot + stat_summary(fun.data = mean_sdl, geom = "errorbar", width=0.2,
+                                  aes(group=group, colour=group))
+    } else if ("mean_se" %in% errorBars) {
+      plot <- plot + stat_summary(fun.data = mean_se, geom = "errorbar", width=0.2,
+                                  aes(group=group, colour=group))
+    }
+                
   }
   
-  if ("mean_ci" %in% errorBars) {
-    plot <- plot + geom_errorbar(aes(ymin=lower, ymax=upper), width=0.2)
-  } else if ("mean_se" %in% errorBars) {
-    plot <- plot + geom_errorbar(aes(ymin=dep-se, ymax=dep+se), width=0.2)
-  }
+  
   
   plot <- plot +
             xlab(x_name) +
             ylab(dep_name) +
             guides(color = guide_legend(override.aes=list(shape = 20))) +
+            labs(color=group_name)
             theme(axis.line = element_line(colour = "black"),
             plot.margin=grid::unit(c(5,85,5,5), "mm"),
             axis.line.x.bottom=element_line(linewidth=0.5),
@@ -205,6 +236,7 @@ uniMakePlot <- function(df, x, group, dep, x_name, dep_name, errorBars, type = "
             panel.border = element_blank(),
             panel.background = element_blank(),
             plot.title = element_text(hjust = 0.5,size = 30, face = "bold"),
+            
             axis.text.x = element_text(color="black"),
             axis.text.y = element_text(color="black"),
             axis.ticks = element_line(color = "black"))

@@ -15,6 +15,14 @@ univariateUI <- function(id) {
     useShinyjs(),
     titlePanel("Univariate"),
     
+    fluidRow (
+      column (
+        width = 12,
+        h5("Note: Use this page for two-way between subjects ANOVAs. To conduct
+           a one-way ANOVA, use the 'One Way ANOVA' page instead.")
+      )
+    ),
+    
     # Creates two drag and drop buckets
     fluidRow(
       column (
@@ -49,7 +57,7 @@ univariateUI <- function(id) {
         span(textOutput(ns("errors")), style="color:red"),
         textOutput(ns("warning")),
         h3("Descriptive Statistics"),
-        tableOutput(ns("descr")),
+        DT::dataTableOutput(ns("descr")),
         h3("Levene's Test for Homogeneity of Variances"),
         verbatimTextOutput(ns("levene")),
         h3("Welch Test"),
@@ -180,7 +188,7 @@ univariateServer <- function(id, data) {
         between1 <- as.factor(data() %>% pull(input$rank_list_3[1]))
         between2 <- as.factor(data() %>% pull(input$rank_list_3[2]))
         dep_name <- c(input$rank_list_2)
-        anova_lm <- anova_lm <- aov_ez(colnames(data())[1], dep_name,
+        anova_lm <- aov_ez(colnames(data())[1], dep_name,
                                        between = c(input$rank_list_3),
                                        data=data(),
                                        return=c("aov"))
@@ -205,12 +213,19 @@ univariateServer <- function(id, data) {
             errorBars <- "none"
           }
           
+          
           if (!is.null(input$plotXAxis)) {
+            
+            if (!is.null(input$plotSepLines)) {
+              
             output$plotResults <- renderPlot({
-              uniMakePlot(data(), as.factor(data() %>% pull(input$plotXAxis)), 
+              # uniMakePlot(data(), input$plotXAxis, input$plotSepLines, dependent_var,
+              #             c(input$plotXAxis), dep_name, errorBars, input$type)
+              uniMakePlot(data(), as.factor(data() %>% pull(input$plotXAxis)),
                           as.factor(data() %>% pull(input$plotSepLines)), dependent_var,
-                          c(input$plotXAxis), dep_name, errorBars, input$type)
+                          c(input$plotXAxis), dep_name, c(input$plotSepLines), errorBars, input$type)
             })
+          }
           }
       
         }
@@ -219,9 +234,14 @@ univariateServer <- function(id, data) {
         if (!is.null(input$stat)) {
           
           if ("Descriptives" %in% input$stat) {
-            descriptives <- two_way_anovaDescriptives(data(), input$rank_list_2, 
-                                         input$rank_list_3[1], input$rank_list_3[2])
-            
+            descriptives <- data() %>% 
+                              group_by(between1, between1) %>% 
+                              dplyr::summarise(N = length(dependent_var),
+                                               Mean = mean(dependent_var),
+                                               Std.Dev = sd(dependent_var),
+                                               Std.Error = stderror(dependent_var))
+            print(descriptives)
+           
             output$descr <- renderTable({
               descriptives
             })
