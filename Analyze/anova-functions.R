@@ -65,18 +65,10 @@ descr_helper <- function(dep, factor, func) {
 stderror <- function(x) sd(x)/sqrt(length(x))
 
 
-two_way_anovaDescriptives <- function(data, dep, var1, var2) {
-  # factor <- as.factor(data %>% pull(var1))
-  # dfs <- split(data, factor)
-  # final_dfs <- lapply(dfs, FUN=anovaDescriptives, dep, var2)
-  factor1 <- as.factor(data %>% pull(var1))
-  factor2 <- as.factor(data %>% pull(var2))
-  summary <- data %>% group_by(factor1, factor2) %>% 
-                    dplyr::summarise(N = length(dep),
-                                     Mean = mean(dep),
-                                     Std.Dev = std(dep),
-                                     Std.Error = stderror(dep))
-  return(summary)
+two_way_anovaDescriptives <- function(data, dep_name, var1, var2) {
+  factor <- as.factor(data %>% pull(var1))
+  dfs <- split(data, factor)
+  final_dfs <- lapply(dfs, FUN=anovaDescriptives, dep_name, var2)
 }
 
 anovaDescriptives <- function(data, dep_name, vars_name) {

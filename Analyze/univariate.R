@@ -57,11 +57,10 @@ univariateUI <- function(id) {
         span(textOutput(ns("errors")), style="color:red"),
         textOutput(ns("warning")),
         h3("Descriptive Statistics"),
-        DT::dataTableOutput(ns("descr")),
+        h5("Note: 'X1' refers to the first level of the first factor you selected."),
+        tableOutput(ns("descr")),
         h3("Levene's Test for Homogeneity of Variances"),
         verbatimTextOutput(ns("levene")),
-        h3("Welch Test"),
-        verbatimTextOutput(ns("welch")),
         h3("ANOVA"),
         verbatimTextOutput(ns("results")),
         h3("Effect Sizes"),
@@ -219,8 +218,7 @@ univariateServer <- function(id, data) {
             if (!is.null(input$plotSepLines)) {
               
             output$plotResults <- renderPlot({
-              # uniMakePlot(data(), input$plotXAxis, input$plotSepLines, dependent_var,
-              #             c(input$plotXAxis), dep_name, errorBars, input$type)
+      
               uniMakePlot(data(), as.factor(data() %>% pull(input$plotXAxis)),
                           as.factor(data() %>% pull(input$plotSepLines)), dependent_var,
                           c(input$plotXAxis), dep_name, c(input$plotSepLines), errorBars, input$type)
@@ -234,17 +232,15 @@ univariateServer <- function(id, data) {
         if (!is.null(input$stat)) {
           
           if ("Descriptives" %in% input$stat) {
-            descriptives <- data() %>% 
-                              group_by(between1, between1) %>% 
-                              dplyr::summarise(N = length(dependent_var),
-                                               Mean = mean(dependent_var),
-                                               Std.Dev = sd(dependent_var),
-                                               Std.Error = stderror(dependent_var))
-            print(descriptives)
+           
+            descriptives <- two_way_anovaDescriptives(data(), input$rank_list_2,
+                                                      input$rank_list_3[1], input$rank_list_3[2])
+    
            
             output$descr <- renderTable({
               descriptives
             })
+            
             
           } else {
             descriptives <- "Not Calulated"
@@ -262,9 +258,6 @@ univariateServer <- function(id, data) {
           if ("Welch Test" %in% input$stat) {
             if (len(input$rank_list_3) == 1) {
               welch <- oneway.test(anova_lm)
-              output$welch <- renderPrint({
-                welch
-              })
             } else {
               welch <- "Not Calculated"
             }
