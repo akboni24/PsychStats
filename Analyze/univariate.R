@@ -81,7 +81,7 @@ univariateUI <- function(id) {
         width = 12,
         checkboxInput(ns("setest"), "Test for simple effects?", value = FALSE),
         selectInput(ns("setestvar"), label = "COMPARE", choices = character(0)),
-        selectInput(ns("setestadj"), label = "ADJ", choices = c("Bonferroni", "LSD")),
+        selectInput(ns("setestadj"), label = "ADJ", choices = list("Bonferroni"=1, "LSD"=2), selected=1),
         actionButton(ns("seOK"), label = "OK"),
         verbatimTextOutput(ns("seResults"))
       )
@@ -435,27 +435,25 @@ univariateServer <- function(id, data) {
         observeEvent(input$seOK,
          {
            req(input$setest)
-    
            
-           if (is.null(input$setestvar)) {
-             lsm <- emmeans(anova_lm, input$rank_list_3[1], 
-                            by=input$rank_list_3[2])
+           # make it into a different input so don't have to deal with this
+    
+           if (input$setestvar == input$rank_list_3[1]) {
              by_var <- input$rank_list_3[2]
            } else {
-             lsm <- emmeans(anova_lm, input$rank_list_3[2], 
-                            by=input$rank_list_3[1])
              by_var <- input$rank_list_3[1]
            }
            
-           if (is.null(input$setestadj)) {
+           if (input$setestadj == 1) {
              ciadj <- "bonferroni"
            } else {
              ciadj <- "none"
            }
+        
+           lsm <- emmeans(anova_lm, input$setestvar, by=by_var, adjust=ciadj)
            
            se_results1 <- pairs(lsm, adjust=ciadj)
            se_results2 <- joint_tests(lsm, by=by_var)
-           
            
            output$seResults <- renderPrint({
              print("Pairwise Comparisons");

@@ -228,7 +228,6 @@ uniMakePlot <- function(data, x, group, dep, x_name, dep_name, group_name, error
             panel.border = element_blank(),
             panel.background = element_blank(),
             plot.title = element_text(hjust = 0.5,size = 30, face = "bold"),
-            
             axis.text.x = element_text(color="black"),
             axis.text.y = element_text(color="black"),
             axis.ticks = element_line(color = "black"))
