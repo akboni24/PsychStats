@@ -356,7 +356,7 @@ one_way_data <- function(data, within, name, vars) {
   data_prepared
 }
 
-one_way_within <- function(data_prepared, effectSizes, w_name) {
+one_way_within <- function(data_prepared, effectSizes, w_name, table=FALSE) {
   #' Conduct a one way within subjects ANOVA
   #' 
   #' Parameters:
@@ -369,7 +369,7 @@ one_way_within <- function(data_prepared, effectSizes, w_name) {
   #' --------
   #' aov object
   #' ---------------------------------------------------------------------------
-  if (effectSizes == TRUE) {
+  if (effectSizes == TRUE && table == FALSE) {
     anovaResults <- aov_ez(colnames(data_prepared)[1], "dependent_var", 
                            within = w_name, data=data_prepared, es="pes")
   } else {

@@ -1,0 +1,56 @@
+---
+title: "One Way ANOVA"
+output: pdf_document
+params:
+  descr: NA
+  anova: NA
+  n2: NA
+  em_o: NA
+  em: NA
+  posthoc: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
+knitr::opts_chunk$set(comment = NA)
+library(shiny)
+library(dplyr)
+library(knitr)
+library(rempsyc)
+library(flextable)
+library(afex)
+set_flextable_defaults(fonts_ignore = TRUE)
+```
+
+## One-Way ANOVA
+
+### Descriptives
+```{r}
+kable(params$descr)
+```
+
+### Analysis of Variance Table
+```{r}
+kable(nice(params$anova))
+```
+
+### Effect Sizes
+```{r}
+kable(params$n2)
+```
+
+### Estimated Marginal Means
+#### Grand Mean
+```{r}
+params$em_o
+```
+#### Within Subjects Factor
+```{r}
+summary(params$em)
+```
+
+### Pairwise Comparisons
+```{r}
+params$posthoc
+```

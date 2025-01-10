@@ -493,6 +493,13 @@ repeatedMeasuresServer <- function(id, data) {
           em3_tests <- c()
           em4_tests <- c()
           
+          if (!is.null(input$EMVars)) {
+            if (!is.null(input$ciadj)) {
+              ciadj <- 'bonferroni'
+            } else {
+              ciadj <- "none"
+            }
+          
           em_fit1 <- emmeans(anova_lm, specs= ~ within_var)
           em1_tests <- c(pairs(em_fit1, adjust=ciadj), 
                          test(em_fit1, adjust=ciadj, joint=TRUE))
@@ -503,6 +510,7 @@ repeatedMeasuresServer <- function(id, data) {
             print(pairs(em_fit1, adjust=ciadj));
             print(test(em_fit1, adjust=ciadj, joint=TRUE))
           })
+          }
 
           # Calculate effect sizes ---------------------------------------------
           if (input$es == TRUE) {
@@ -734,7 +742,7 @@ repeatedMeasuresServer <- function(id, data) {
                      {
                        req(input$setest)
                        
-                       if (!is.null(input$setestadj)) {
+                       if (input$setestadj == "Bonferroni") {
                          ciadj <- 'bonferroni'
                        } else {
                          ciadj <- "none"

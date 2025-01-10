@@ -16,6 +16,7 @@ source("Analyze/pairedSamplesT.R", local=TRUE)
 source("Analyze/oneWayANOVA.R", local=TRUE)
 source("Analyze/univariate.R", local=TRUE)
 source("Analyze/repeatedMeasures.R", local=TRUE)
+source("Analyze/oneWayWithinANOVA.R", local=TRUE)
 source("Analyze/regression.R", local=TRUE)
 source("Analyze/correlation.R", local=TRUE)
 source("Graphs/scatter.R", local=TRUE)
@@ -41,7 +42,7 @@ ui <- navbarPage(
               
             # Main Panel for the data table ---------------
             mainPanel(
-             DT::dataTableOutput("table1")
+             DT::dataTableOutput("table1"),
            ))),
   navbarMenu("Analyze", 
              "Descriptive Stats", # section headers
@@ -54,7 +55,9 @@ ui <- navbarPage(
              tabPanel("One Way ANOVA", fluidPage(oneWayAnovaUI("owanova"))),
              "General Linear Model",
              tabPanel("Univariate", fluidPage(univariateUI("uni"))),
-             tabPanel("Repeated Measures", fluidPage(repeatedMeasuresUI("repm"))),
+             "Repeated Measures", 
+              tabPanel("One Way Within", fluidPage(oneWayWithinUI("oww"))),
+              tabPanel("Two Way Within", fluidPage(repeatedMeasuresUI("repm"))),
              "Regression and Correlation",
              tabPanel("Linear", fluidPage(regressionUI("linreg"))),
              tabPanel("Bivariate Correlation", fluidPage(correlationUI("corr")))),
@@ -62,11 +65,7 @@ ui <- navbarPage(
              "Legacy Dialogs",
              tabPanel("Simple Scatter", fluidPage(scatterUI("scat")))),
   navbarMenu("R Tutorials", "five")
-
-
 )
-
-
 
 server <- function(input, output, session) {
   
@@ -82,7 +81,7 @@ server <- function(input, output, session) {
     }
 
   })
-  
+
   
   output$table1 <- DT::renderDataTable({
     
@@ -103,6 +102,7 @@ server <- function(input, output, session) {
   oneWayAnovaServer("owanova", df)
   univariateServer("uni", df)
   repeatedMeasuresServer("repm", df)
+  oneWayWithinServer("oww", df)
   regressionServer("linreg", df)
   correlationServer("corr", df)
   scatterServer("scat", df)

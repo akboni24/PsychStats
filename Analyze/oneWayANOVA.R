@@ -211,11 +211,7 @@ oneWayAnovaServer <- function(id, data) {
         }
         
         # Calculate post hoc tests ---------------------------------------------
-        if (is.null(input$confint)) {
-          confint = 0.95
-        } else {
-          confint = input$confint
-        }
+        confint = input$confint
         
         if (!is.null(input$eva)) {
       
