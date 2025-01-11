@@ -192,7 +192,6 @@ oneWayWithinServer <- function(id, data) {
         })
 
         output$emResults1 <- renderPrint({
-          input$confint;
           print(c(input$ws1));
           print(summary(em_fit1, level=input$confint));
         })

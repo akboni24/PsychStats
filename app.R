@@ -17,6 +17,7 @@ source("Analyze/oneWayANOVA.R", local=TRUE)
 source("Analyze/univariate.R", local=TRUE)
 source("Analyze/repeatedMeasures.R", local=TRUE)
 source("Analyze/oneWayWithinANOVA.R", local=TRUE)
+source("Analyze/twoWayWithinANOVA.R", local=TRUE)
 source("Analyze/regression.R", local=TRUE)
 source("Analyze/correlation.R", local=TRUE)
 source("Graphs/scatter.R", local=TRUE)
@@ -57,7 +58,7 @@ ui <- navbarPage(
              tabPanel("Univariate", fluidPage(univariateUI("uni"))),
              "Repeated Measures", 
               tabPanel("One Way Within", fluidPage(oneWayWithinUI("oww"))),
-              tabPanel("Two Way Within", fluidPage(repeatedMeasuresUI("repm"))),
+              tabPanel("Two Way Within", fluidPage(twoWayWithinUI("tww"))),
              "Regression and Correlation",
              tabPanel("Linear", fluidPage(regressionUI("linreg"))),
              tabPanel("Bivariate Correlation", fluidPage(correlationUI("corr")))),
@@ -103,6 +104,7 @@ server <- function(input, output, session) {
   univariateServer("uni", df)
   repeatedMeasuresServer("repm", df)
   oneWayWithinServer("oww", df)
+  twoWayWithinServer("tww", df)
   regressionServer("linreg", df)
   correlationServer("corr", df)
   scatterServer("scat", df)
