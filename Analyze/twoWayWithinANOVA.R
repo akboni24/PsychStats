@@ -226,10 +226,10 @@ twoWayWithinServer <- function(id, data) {
           summary(results)
         })
         
-        # Calculate chosen statistics ----------------------------------------
+        # Calculate chosen statistics ------------------------------------------
+        descriptives <- "Not Calculated"
         if (!is.null(input$stat)) {
           
-          descriptives <- "Not Calculated"
           if ("Descriptives" %in% input$stat) {
             descriptives <- two_way_anovaDescriptives(data_prepared, "dependent_var",
                                                       c(input$ws1), c(input$ws2))
@@ -238,6 +238,7 @@ twoWayWithinServer <- function(id, data) {
             })
           }
         }
+        
         
         
         # Calculate effect sizes ---------------------------------------------
@@ -273,7 +274,7 @@ twoWayWithinServer <- function(id, data) {
           em_fit1 <- emmeans(anova_lm, c(input$ws1))
           output$emResults1 <- renderPrint({
             print(c(input$ws1));
-            print(summary(em_fit1));
+            print(summary(em_fit1, level=input$confint));
             if ("Compare main effects" %in% input$cme) {
               print(pairs(em_fit1, adjust=ciadj));
               print(test(em_fit1, adjust=ciadj, joint=TRUE))
@@ -371,7 +372,7 @@ twoWayWithinServer <- function(id, data) {
         
         # Make plots -------------------------------------------------------------
         if(!is.null(input$errorBars)) {
-          if(is.null(input$ebOptions)) {
+          if(input$ebOptions == 1) {
             errorBars <- "mean_ci"
           } else {
             errorBars <- "mean_se"
@@ -381,9 +382,11 @@ twoWayWithinServer <- function(id, data) {
         }
         
         all_vars <- c(input$ws1, input$ws2)
-        if (!is.null(input$plotXAxis)) {
-          plot <- uniMakePlot(data_prepared, input$plotXAxis, input$plotSepLines, 
-                              "dependent_var", input$type, errorBars)
+        if (!is.null(input$plotXAxis) && !is.null(input$plotSepLines)) {
+          plot <- uniMakePlot(data_prepared, as.factor(data_prepared %>% pull(input$plotXAxis)), 
+                              as.factor(data_prepared %>% pull(input$plotSepLines)), 
+                              data_prepared %>% pull("dependent_var"), c(input$plotXAxis), 
+                              "dependent_var",c(input$plotSepLines), errorBars, input$type)
           output$plotResults <- renderPlot({
             plot
           })
@@ -391,15 +394,15 @@ twoWayWithinServer <- function(id, data) {
           plot <- c()
         }
         
-        
+        se_results <- "Not Calculated"
         observeEvent(input$seOK,
          {
            req(input$setest)
     
-           if (input$setestvar == input$rank_list_3[1]) {
-             by_var <- input$rank_list_3[2]
+           if (input$setestvar == input$ws1) {
+             by_var <- input$ws2
            } else {
-             by_var <- input$rank_list_3[1]
+             by_var <- input$ws1
            }
            
            if (input$setestadj == 1) {
@@ -413,6 +416,8 @@ twoWayWithinServer <- function(id, data) {
            se_results1 <- pairs(lsm, adjust=ciadj)
            se_results2 <- joint_tests(lsm, by=by_var)
            
+           se_results <- c(se_results1, se_results2)
+           
            output$seResults <- renderPrint({
              print("Pairwise Comparisons");
              print(se_results1);
@@ -422,12 +427,13 @@ twoWayWithinServer <- function(id, data) {
          })
            
         # Generate the downloadable pdf report ---------------------------------
-        se_results <- "Not Calculated"
-        # params <- list(descr=descriptives, levene=levene, welch=welch,
-        #                anova=anovaResults, n2=esResults, em=emmeans,
-        #                posthoc=posthoc, se=se_results)
-        # 
-        # output$report <- generate_report("univariate_report", params)
+        params <- list(descr=descriptives, anova=results, n2=esResults, 
+                       emo=em1, em1=em_fit1, em1_tests=em1_tests, 
+                       em2=em_fit2, em2_tests=em2_tests, em3=em_fit3, 
+                       em3_tests=em3_tests, em4=em_fit4, em4_tests=em4_tests, 
+                       plot=plot, se=se_results)
+
+        output$report <- generate_report("two_way_within_report", params)
 
         }
 

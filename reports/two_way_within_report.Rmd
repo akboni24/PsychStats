@@ -1,0 +1,95 @@
+---
+title: "Repeated Measures ANOVA"
+output: pdf_document
+params:
+  descr: NA
+  anova: NA
+  n2: NA
+  emo: NA
+  em1: NA
+  em1_tests: NA
+  em2: NA
+  em2_tests: NA
+  em3: NA
+  em3_tests: NA
+  em4: NA
+  em4_tests: NA
+  plot: NA
+  se: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(ft.tabcolsep=0, ft.latex.float = "none")
+knitr::opts_chunk$set(comment = NA)
+library(shiny)
+library(dplyr)
+library(knitr)
+library(rempsyc)
+library(flextable)
+set_flextable_defaults(fonts_ignore = TRUE)
+```
+
+## Repeated Measures ANOVA
+
+### Descriptives
+```{r, results='asis'}
+for(x in params$descr) print(kable(x))
+```
+
+### Analysis of Variance Table
+```{r}
+summary(params$anova)
+```
+
+### Effect Sizes
+```{r}
+kable(params$n2)
+```
+
+### Estimated Marginal Means
+#### Overall
+```{r}
+params$emo
+```
+#### Within Subjects Factor 1
+```{r}
+params$em1
+```
+```{r}
+params$em1_tests
+```
+#### Within Subjects Factor 2
+```{r}
+params$em2
+```
+```{r}
+params$em2_tests
+```
+#### Interaction
+###### Pairwise Comparisons
+```{r}
+params$em3
+```
+###### Multivariate Tests
+```{r}
+params$em3_tests
+```
+###### Pairwise Comparisons
+```{r}
+params$em4
+```
+###### Multivariate Tests
+```{r}
+params$em4_tests
+```
+
+### Plots
+```{r}
+params$plot
+```
+
+### Test for Simple Effects
+```{r}
+params$se
+```

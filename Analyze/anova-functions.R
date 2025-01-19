@@ -155,8 +155,7 @@ uniPlotsModal <- function(input, output, session, vars) {
                                                                "Bar Chart"))),
     fluidRow(
       checkboxInput(ns("errorBars"), "Include Error bars"),
-      radioButtons(ns("ebOptions"), label=NULL, c("Confidence Interval (95.0%)", 
-                                                  "Standard Error"))),
+      radioButtons(ns("ebOptions"), label=NULL, choices = c("Confidence Interval (95.0%)" = 1, "Standard Error" = 2), selected = 1)),
     footer = tagList(modalButton(label = "Cancel"), actionButton(ns("continue"),
                                                                  "Continue"))
   )
